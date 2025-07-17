@@ -1,10 +1,13 @@
 # Home Assistant Entity Manager
 
+[![Beta](https://img.shields.io/badge/Status-Beta-yellow.svg)](https://github.com/Skjall/home-assistant-entity-manager)
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://github.com/hacs/integration)
 [![GitHub Release](https://img.shields.io/github/release/Skjall/home-assistant-entity-manager.svg?style=flat-square)](https://github.com/Skjall/home-assistant-entity-manager/releases)
 [![License](https://img.shields.io/github/license/Skjall/home-assistant-entity-manager.svg?style=flat-square)](LICENSE)
 
 A Home Assistant integration for standardizing and managing entity names according to a consistent naming convention. Available through HACS (Home Assistant Community Store).
+
+> **⚠️ Beta Software**: This integration is currently in beta testing. While core functionality is stable, you may encounter bugs. Please report any issues on the [GitHub Issues](https://github.com/Skjall/home-assistant-entity-manager/issues) page.
 
 ## Features
 
