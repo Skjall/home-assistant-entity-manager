@@ -1,8 +1,8 @@
 # Home Assistant Entity Manager
 
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://github.com/hacs/integration)
-[![GitHub Release](https://img.shields.io/github/release/jangrossheim/home-assistant-entity-manager.svg?style=flat-square)](https://github.com/jangrossheim/home-assistant-entity-manager/releases)
-[![License](https://img.shields.io/github/license/jangrossheim/home-assistant-entity-manager.svg?style=flat-square)](LICENSE)
+[![GitHub Release](https://img.shields.io/github/release/Skjall/home-assistant-entity-manager.svg?style=flat-square)](https://github.com/Skjall/home-assistant-entity-manager/releases)
+[![License](https://img.shields.io/github/license/Skjall/home-assistant-entity-manager.svg?style=flat-square)](LICENSE)
 
 A Home Assistant integration for standardizing and managing entity names according to a consistent naming convention. Available through HACS (Home Assistant Community Store).
 
@@ -20,10 +20,13 @@ A Home Assistant integration for standardizing and managing entity names accordi
 
 ### Via HACS (Recommended)
 
+[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=Skjall&repository=home-assistant-entity-manager&category=integration)
+
+#### Manual steps:
 1. Open HACS in your Home Assistant instance
 2. Click on "Integrations"
 3. Click the three dots in the top right corner and select "Custom repositories"
-4. Add this repository URL: `https://github.com/jangrossheim/home-assistant-entity-manager`
+4. Add this repository URL: `https://github.com/Skjall/home-assistant-entity-manager`
 5. Select "Integration" as the category
 6. Click "Add"
 7. Search for "Entity Manager" and install it
@@ -72,9 +75,24 @@ data:
   dry_run: false  # Set to true for preview only
 ```
 
-### Using the Web Interface (Coming Soon)
+### Using the Web Interface
 
-The integration will provide a panel in the Home Assistant UI for visual entity management.
+After installation, the Entity Manager provides a web interface panel in Home Assistant:
+
+1. Navigate to the sidebar in Home Assistant
+2. Click on "Entity Manager" (admin access required)
+3. Select an area from the dropdown
+4. Optionally filter by domain (light, switch, sensor, etc.)
+5. Preview entities that need renaming
+6. Select entities to process
+7. Click "Process X entities" to apply changes
+
+The web interface features:
+- **Area-based navigation**: Browse entities organized by room/area
+- **Domain filtering**: Filter entities by type
+- **Visual indicators**: See which entities need renaming
+- **Batch operations**: Select and rename multiple entities at once
+- **Skip maintained**: Option to hide entities already processed
 
 ## Naming Convention
 

@@ -15,6 +15,8 @@ from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.typing import ConfigType
+from homeassistant.components import frontend
+from homeassistant.components import websocket_api
 
 from .const import (
     DOMAIN,
@@ -33,7 +35,7 @@ from .naming_overrides import NamingOverrides
 
 _LOGGER = logging.getLogger(__name__)
 
-PLATFORMS: list[Platform] = []
+PLATFORMS: list[Platform] = [Platform.FRONTEND]
 
 # Service schemas
 ANALYZE_ENTITIES_SCHEMA = vol.Schema({
@@ -75,6 +77,18 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         # Register services only once
         if len(hass.data[DOMAIN]) == 1:
             await async_setup_services(hass)
+            
+        # Register panel
+        hass.http.register_static_path(
+            f"/api/{DOMAIN}",
+            hass.config.path(f"custom_components/{DOMAIN}/panel"),
+            cache_headers=False,
+        )
+        
+        await hass.config_entries.async_forward_entry_setup(entry, "frontend")
+        
+        # Setup websocket commands
+        await async_setup_websocket_commands(hass)
         
         return True
         
@@ -86,6 +100,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload a config entry."""
     try:
+        # Unload frontend
+        unload_ok = await hass.config_entries.async_forward_entry_unload(entry, "frontend")
+        if not unload_ok:
+            return False
+            
         # Only unregister services if this is the last instance
         if len(hass.data[DOMAIN]) == 1:
             hass.services.async_remove(DOMAIN, SERVICE_ANALYZE_ENTITIES)
@@ -459,3 +478,144 @@ def _get_entities_to_analyze(
             break
     
     return entities
+
+
+async def async_setup_websocket_commands(hass: HomeAssistant) -> None:
+    """Set up websocket commands for the Entity Manager integration."""
+    
+    @websocket_api.websocket_command({
+        vol.Required("type"): "entity_manager/get_areas",
+    })
+    @websocket_api.async_response
+    async def websocket_get_areas(hass, connection, msg):
+        """Get all areas with entity counts."""
+        entity_reg = er.async_get(hass)
+        area_reg = ar.async_get(hass)
+        
+        areas = []
+        for area in area_reg.areas.values():
+            entity_count = sum(
+                1 for entity in entity_reg.entities.values()
+                if entity.area_id == area.id or (
+                    entity.device_id and 
+                    dr.async_get(hass).async_get(entity.device_id) and
+                    dr.async_get(hass).async_get(entity.device_id).area_id == area.id
+                )
+            )
+            areas.append({
+                "area_id": area.id,
+                "name": area.name,
+                "entity_count": entity_count
+            })
+        
+        connection.send_result(msg["id"], {"areas": areas})
+    
+    @websocket_api.websocket_command({
+        vol.Required("type"): "entity_manager/get_entities_by_area",
+        vol.Required("area_name"): str,
+        vol.Optional("domain"): str,
+        vol.Optional("skip_maintained"): bool,
+    })
+    @websocket_api.async_response
+    async def websocket_get_entities_by_area(hass, connection, msg):
+        """Get entities for a specific area."""
+        area_name = msg["area_name"]
+        domain_filter = msg.get("domain")
+        skip_maintained = msg.get("skip_maintained", False)
+        
+        entity_reg = er.async_get(hass)
+        area_reg = ar.async_get(hass)
+        device_reg = dr.async_get(hass)
+        
+        # Find area by name
+        area = None
+        for a in area_reg.areas.values():
+            if a.name == area_name:
+                area = a
+                break
+        
+        if not area:
+            connection.send_error(msg["id"], "area_not_found", f"Area {area_name} not found")
+            return
+        
+        # Get naming overrides
+        naming_overrides = _get_naming_overrides(hass)
+        
+        # Create restructurer
+        restructurer = _create_restructurer(
+            hass, naming_overrides, entity_reg, device_reg, area_reg
+        )
+        
+        entities = []
+        for entity in entity_reg.entities.values():
+            # Check if entity belongs to area
+            entity_area_id = entity.area_id
+            if not entity_area_id and entity.device_id:
+                device = device_reg.async_get(entity.device_id)
+                if device:
+                    entity_area_id = device.area_id
+            
+            if entity_area_id != area.id:
+                continue
+            
+            # Apply domain filter
+            if domain_filter and not entity.entity_id.startswith(f"{domain_filter}."):
+                continue
+            
+            # Skip maintained if requested
+            if skip_maintained and LABEL_MAINTAINED in (entity.labels or set()):
+                continue
+            
+            # Generate new ID
+            try:
+                state_info = {"attributes": {}}
+                new_id, friendly_name = restructurer.generate_new_entity_id(
+                    entity.entity_id, state_info
+                )
+                
+                entities.append({
+                    "entity_id": entity.entity_id,
+                    "new_entity_id": new_id,
+                    "friendly_name": friendly_name,
+                    "needs_rename": entity.entity_id != new_id,
+                    "has_maintained_label": LABEL_MAINTAINED in (entity.labels or set()),
+                })
+            except Exception as err:
+                _LOGGER.warning(f"Failed to process entity {entity.entity_id}: {err}")
+        
+        connection.send_result(msg["id"], {"entities": entities})
+    
+    @websocket_api.websocket_command({
+        vol.Required("type"): "entity_manager/rename_entities",
+        vol.Required("entity_ids"): [str],
+    })
+    @websocket_api.async_response
+    async def websocket_rename_entities(hass, connection, msg):
+        """Rename multiple entities."""
+        entity_ids = msg["entity_ids"]
+        
+        results = []
+        for entity_id in entity_ids:
+            try:
+                # Call the rename service
+                result = await hass.services.async_call(
+                    DOMAIN,
+                    SERVICE_RENAME_ENTITY,
+                    {"entity_id": entity_id},
+                    blocking=True,
+                    return_response=True
+                )
+                results.append(result)
+            except Exception as err:
+                results.append({
+                    "success": False,
+                    "entity_id": entity_id,
+                    "error": str(err)
+                })
+        
+        connection.send_result(msg["id"], {"results": results})
+    
+    # Register commands
+    websocket_api.async_register_command(hass, websocket_get_areas)
+    websocket_api.async_register_command(hass, websocket_get_entities_by_area)
+    websocket_api.async_register_command(hass, websocket_rename_entities)

@@ -1,12 +1,12 @@
 {
   "domain": "entity_manager",
   "name": "Entity Manager",
-  "codeowners": ["@jangrossheim"],
+  "codeowners": ["@Skjall"],
   "config_flow": true,
-  "dependencies": ["websocket_api"],
-  "documentation": "https://github.com/jangrossheim/home-assistant-entity-manager",
+  "dependencies": ["websocket_api", "http", "frontend"],
+  "documentation": "https://github.com/Skjall/home-assistant-entity-manager",
   "iot_class": "local_push",
-  "issue_tracker": "https://github.com/jangrossheim/home-assistant-entity-manager/issues",
+  "issue_tracker": "https://github.com/Skjall/home-assistant-entity-manager/issues",
   "requirements": [],
   "version": "1.0.0"
 }
