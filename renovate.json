@@ -25,6 +25,12 @@
       "matchPackageNames": ["pytest-asyncio"],
       "allowedVersions": "0.20.3",
       "description": "Pinned due to pytest-homeassistant-custom-component dependency"
+    },
+    {
+      "matchFiles": ["requirements-test.txt"],
+      "matchPackageNames": ["pytest-cov"],
+      "allowedVersions": "3.0.0",
+      "description": "Pinned due to pytest-homeassistant-custom-component dependency"
     }
   ],
   "vulnerabilityAlerts": {
