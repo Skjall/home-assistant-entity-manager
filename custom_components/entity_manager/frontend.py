@@ -1,4 +1,5 @@
 """Frontend for Entity Manager."""
+
 from __future__ import annotations
 
 import logging
@@ -14,13 +15,13 @@ _LOGGER = logging.getLogger(__name__)
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up the Entity Manager frontend."""
-    
+
     hass.http.register_static_path(
         f"/entity_manager_static",
         hass.config.path(f"custom_components/{DOMAIN}/panel"),
         cache_headers=False,
     )
-    
+
     await frontend.async_register_built_in_panel(
         hass,
         component_name="custom",
@@ -36,7 +37,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         },
         require_admin=True,
     )
-    
+
     return True
 
 

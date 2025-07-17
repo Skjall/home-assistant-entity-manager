@@ -1,6 +1,8 @@
 """Global fixtures for Entity Manager tests."""
+
+from unittest.mock import MagicMock, patch
+
 import pytest
-from unittest.mock import patch, MagicMock
 from homeassistant.core import HomeAssistant
 
 
@@ -34,7 +36,7 @@ def mock_entity_registry():
             original_name="Test Light",
             device_id="device123",
             area_id="area123",
-            labels=set()
+            labels=set(),
         )
     }
     return registry
@@ -50,7 +52,7 @@ def mock_device_registry():
             name="Test Device",
             name_by_user=None,
             model="Test Model",
-            area_id="area123"
+            area_id="area123",
         )
     }
     return registry
@@ -60,10 +62,5 @@ def mock_device_registry():
 def mock_area_registry():
     """Return a mock area registry."""
     registry = MagicMock()
-    registry.areas = {
-        "area123": MagicMock(
-            id="area123",
-            name="Test Room"
-        )
-    }
+    registry.areas = {"area123": MagicMock(id="area123", name="Test Room")}
     return registry
