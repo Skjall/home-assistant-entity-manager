@@ -1,0 +1,1387 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home Assistant Entity Manager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    <style>
+        [x-cloak] { display: none !important; }
+        .entity-card {
+            transition: all 0.2s ease;
+            cursor: pointer;
+            user-select: none;
+        }
+        .entity-card:hover {
+            transform: translateX(4px);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        .entity-card.selected {
+            border: 2px solid #3b82f6;
+            background: linear-gradient(to right, #eff6ff 0%, #ffffff 100%);
+        }
+        .needs-rename {
+            background: linear-gradient(to right, #fef3c7 0%, #ffffff 100%);
+        }
+        .needs-rename.selected {
+            background: linear-gradient(to right, #dbeafe 0%, #fef3c7 50%, #ffffff 100%);
+        }
+        .already-correct {
+            background: linear-gradient(to right, #d1fae5 0%, #ffffff 100%);
+        }
+        .already-correct.selected {
+            background: linear-gradient(to right, #dbeafe 0%, #d1fae5 50%, #ffffff 100%);
+        }
+        .selection-indicator {
+            transition: all 0.2s ease;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div x-data="entityManager()" x-init="init()" class="min-h-screen">
+        <!-- Header -->
+        <header class="bg-white shadow-sm border-b">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-3">
+                        <i class="ri-home-8-line text-2xl text-blue-600"></i>
+                        <h1 class="text-2xl font-bold text-gray-900">Home Assistant Entity Manager</h1>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <div class="text-sm text-gray-600">
+                            <span x-show="stats.total_entities">
+                                <i class="ri-database-2-line"></i>
+                                <span x-text="stats.total_entities"></span> Entities
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <!-- Selection Panel -->
+            <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
+                <h2 class="text-lg font-semibold mb-4 flex items-center">
+                    <i class="ri-filter-3-line mr-2"></i>
+                    Entity Auswahl
+                </h2>
+
+                <div class="grid md:grid-cols-3 gap-4">
+                    <!-- Area Selection -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Raum</label>
+                        <div class="space-y-2">
+                            <select x-model="selectedArea" @change="onAreaChange()"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                <option value="">Wähle einen Raum...</option>
+                                <template x-for="area in areas" :key="area.name">
+                                    <option :value="area.name">
+                                        <span x-text="`${area.display_name} (${area.entity_count} Entities)`"></span>
+                                    </option>
+                                </template>
+                            </select>
+                            <div x-show="selectedAreaData && selectedAreaData.area_id" class="flex items-center space-x-2 text-sm">
+                                <span class="text-gray-500">Name Override:</span>
+                                <template x-if="!editingAreaName && selectedAreaData">
+                                    <code class="text-sm font-mono cursor-pointer hover:underline"
+                                          :class="selectedAreaData && selectedAreaData.has_override ? 'text-blue-700' : 'text-gray-600'"
+                                          x-text="selectedAreaData && selectedAreaData.has_override ? selectedAreaData.override_name : (selectedAreaData ? selectedAreaData.name : '')"
+                                          @click="startAreaEdit()"></code>
+                                </template>
+                                <template x-if="editingAreaName">
+                                    <input type="text"
+                                           x-model="areaOverrideName"
+                                           @keyup.enter="saveAreaEdit()"
+                                           @keyup.escape.stop="cancelAreaEdit()"
+                                           @blur="handleAreaBlur($event)"
+                                           class="text-sm font-mono px-2 py-1 border border-blue-500 rounded focus:ring-2 focus:ring-blue-500"
+                                           placeholder="Area Name"
+                                           x-init="$nextTick(() => $el.focus())">
+                                </template>
+                                <span x-show="editingAreaName" class="text-xs text-gray-500 italic">
+                                    Enter zum Speichern, ESC zum Abbrechen
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Domain Selection -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Domain</label>
+                        <select x-model="selectedDomain" @change="onDomainChange()" :disabled="!selectedArea"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed">
+                            <option value="">Wähle eine Domain...</option>
+                            <option value="all">Alle Domänen</option>
+                            <template x-for="domain in availableDomains" :key="domain">
+                                <option :value="domain" x-text="domain"></option>
+                            </template>
+                        </select>
+                    </div>
+
+                    <!-- Filter Options -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Filter</label>
+                        <label class="relative flex items-start cursor-pointer group">
+                                <input type="checkbox" x-model="skipReviewed" @change="onFilterChange()"
+                                       class="sr-only peer">
+                                <div class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                <div class="ml-3">
+                                    <span class="text-sm font-medium text-gray-900 group-hover:text-gray-700">
+                                        Nur unbearbeitete Entities
+                                    </span>
+                                    <p class="text-xs text-gray-500 mt-0.5">
+                                        Überspringe Entities mit "maintained" Label
+                                    </p>
+                                </div>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Loading State -->
+            <div x-show="loading" x-cloak class="flex justify-center py-12">
+                <div class="flex items-center space-x-2">
+                    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                    <span class="text-gray-600">Lade Entities...</span>
+                </div>
+            </div>
+
+            <!-- Preview Results -->
+            <div x-show="changes.length > 0 && !loading" x-cloak>
+                <!-- Summary -->
+                <div class="bg-white rounded-lg shadow-sm p-4 mb-6">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center space-x-6">
+                            <div class="text-sm">
+                                <span class="text-gray-600">Gesamt:</span>
+                                <span class="font-semibold text-lg ml-1" x-text="changes.length"></span>
+                            </div>
+                            <div class="text-sm">
+                                <span class="text-gray-600">Umbenennungen nötig:</span>
+                                <span class="font-semibold text-lg ml-1 text-amber-600" x-text="needRenameCount"></span>
+                            </div>
+                            <div class="text-sm">
+                                <span class="text-gray-600">Bereits korrekt:</span>
+                                <span class="font-semibold text-lg ml-1 text-green-600" x-text="totalEntities - needRenameCount"></span>
+                            </div>
+                            <div class="text-sm">
+                                <span class="text-gray-600">Geräte:</span>
+                                <span class="font-semibold text-lg ml-1" x-text="changes.length"></span>
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <button @click="selectAll()"
+                                    class="px-3 py-1.5 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors flex items-center">
+                                <i class="ri-checkbox-multiple-line mr-1.5"></i>
+                                Alle auswählen
+                            </button>
+                            <button @click="selectNone()"
+                                    class="px-3 py-1.5 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors flex items-center">
+                                <i class="ri-checkbox-blank-line mr-1.5"></i>
+                                Keine auswählen
+                            </button>
+                            <button @click="executeChanges()"
+                                    :disabled="(selectedCount === 0 && selectedDeviceCount === 0) || executing"
+                                    class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors">
+                                <i class="ri-check-line mr-1"></i>
+                                <span x-text="getExecuteButtonText()"></span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Device/Entity List -->
+                <div class="space-y-4">
+                    <template x-for="(deviceGroup, index) in changes" :key="index">
+                        <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+                            <!-- Device Header -->
+                            <div class="bg-gray-50 px-4 py-3 border-b border-gray-200"
+                                 :class="[
+                                     deviceGroup && deviceGroup.device && deviceGroup.device.needs_rename ? 'bg-amber-50 cursor-pointer' : 'cursor-default',
+                                     deviceGroup && deviceGroup.device && deviceGroup.device.selected ? 'ring-2 ring-blue-500' : ''
+                                 ]"
+                                 @click="deviceGroup && deviceGroup.device && deviceGroup.device.needs_rename && toggleDeviceSelection(deviceGroup.device)">
+                                <div x-show="deviceGroup && deviceGroup.device" class="space-y-3">
+                                    <!-- Device Info Row -->
+                                    <div class="flex items-start space-x-4">
+                                        <!-- Device Selection Checkbox -->
+                                        <div class="pt-1">
+                                            <div class="w-6 h-6 rounded-full flex items-center justify-center"
+                                                 :class="[
+                                                     deviceGroup && deviceGroup.device && deviceGroup.device.needs_rename ? 'cursor-pointer' : 'cursor-not-allowed opacity-50',
+                                                     deviceGroup && deviceGroup.device && deviceGroup.device.selected ? 'bg-blue-600' : (deviceGroup && deviceGroup.device && deviceGroup.device.needs_rename ? 'bg-gray-300' : 'bg-gray-200')
+                                                 ]"
+                                                 @click.stop="deviceGroup && deviceGroup.device && deviceGroup.device.needs_rename && toggleDeviceSelection(deviceGroup.device)">
+                                                <i class="text-white text-sm"
+                                                   :class="deviceGroup && deviceGroup.device && deviceGroup.device.selected ? 'ri-check-line' : ''"></i>
+                                            </div>
+                                        </div>
+
+                                        <div class="flex-1">
+                                            <div class="flex items-center justify-between">
+                                                <div class="flex items-center space-x-3">
+                                                    <i class="ri-cpu-line text-gray-600"></i>
+                                                    <div>
+                                                        <h3 class="font-semibold text-gray-900" x-text="deviceGroup && deviceGroup.device ? deviceGroup.device.current_name : ''"></h3>
+                                                        <p class="text-xs text-gray-500">
+                                                            <span x-show="deviceGroup && deviceGroup.device && deviceGroup.device.manufacturer" x-text="deviceGroup && deviceGroup.device ? deviceGroup.device.manufacturer : ''"></span>
+                                                            <span x-show="deviceGroup && deviceGroup.device && deviceGroup.device.model" x-text="deviceGroup && deviceGroup.device && deviceGroup.device.model ? ' • ' + deviceGroup.device.model : ''"></span>
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                                <div class="flex items-center space-x-2">
+                                                    <span class="text-sm text-gray-500">
+                                                        <span x-text="deviceGroup && deviceGroup.entities ? deviceGroup.entities.length : 0"></span> Entities
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Device Renaming Suggestion -->
+                                    <div class="flex items-center space-x-4 pt-2 border-t border-gray-200" @click.stop>
+                                        <div class="flex-1">
+                                            <div class="flex items-center space-x-2">
+                                                <template x-if="deviceGroup && deviceGroup.device && deviceGroup.device.has_override">
+                                                    <span class="text-xs text-gray-500">Basisname:</span>
+                                                </template>
+                                                <template x-if="deviceGroup && deviceGroup.device && !deviceGroup.device.has_override">
+                                                    <span class="text-xs text-gray-500">Vorschlag:</span>
+                                                </template>
+                                                <template x-if="deviceGroup && deviceGroup.device && !deviceGroup.device.editing">
+                                                    <code class="text-sm font-mono cursor-pointer hover:underline"
+                                                          :class="deviceGroup && deviceGroup.device && deviceGroup.device.has_override ? 'text-blue-700' : 'text-amber-700'"
+                                                          x-text="deviceGroup && deviceGroup.device ? (deviceGroup.device.has_override ? deviceGroup.device.override_name : deviceGroup.device.suggested_base_name) : ''"
+                                                          @click="startDeviceEdit(deviceGroup.device)"></code>
+                                                </template>
+                                                <template x-if="deviceGroup && deviceGroup.device && deviceGroup.device.editing">
+                                                    <input type="text"
+                                                           x-model="deviceGroup.device.override_name"
+                                                           @keyup.enter="saveDeviceEdit(deviceGroup.device)"
+                                                           @keyup.escape.stop="cancelDeviceEdit(deviceGroup.device)"
+                                                           @blur="handleDeviceBlur($event, deviceGroup.device)"
+                                                           class="text-sm font-mono px-2 py-1 border border-amber-500 rounded focus:ring-2 focus:ring-blue-500"
+                                                           placeholder="Device Name Override"
+                                                           x-init="$nextTick(() => $el.focus())">
+                                                </template>
+                                            </div>
+                                        </div>
+                                        <div class="flex items-center space-x-2">
+                                            <template x-if="deviceGroup.device && !deviceGroup.device.has_override">
+                                                <button x-show="deviceGroup && deviceGroup.device && !deviceGroup.device.editing"
+                                                        @click="if (deviceGroup && deviceGroup.device) { deviceGroup.device.override_name = deviceGroup.device.suggested_base_name; saveDeviceEdit(deviceGroup.device); }"
+                                                        class="text-xs text-green-600 hover:text-green-700">
+                                                    <i class="ri-check-line mr-1"></i>
+                                                    Vorschlag annehmen
+                                                </button>
+                                            </template>
+                                            <span x-show="deviceGroup && deviceGroup.device && deviceGroup.device.editing" class="text-xs text-gray-500 italic">
+                                                Enter zum Speichern, ESC zum Abbrechen
+                                            </span>
+                                            <span x-show="deviceGroup && deviceGroup.device && !deviceGroup.device.needs_rename && !deviceGroup.device.editing" class="text-xs text-green-600 flex items-center">
+                                                <i class="ri-checkbox-circle-line mr-1"></i>
+                                                Name bereits korrekt
+                                            </span>
+                                            <span x-show="deviceGroup && deviceGroup.device && deviceGroup.device.selected" class="text-xs text-blue-600 flex items-center ml-auto">
+                                                <i class="ri-checkbox-circle-fill mr-1"></i>
+                                                Ausgewählt
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    <!-- Device Rename Preview -->
+                                    <div x-show="deviceGroup && deviceGroup.device && deviceGroup.device.needs_rename" class="mt-2 space-y-1">
+                                        <div class="flex items-center space-x-2">
+                                            <i class="ri-arrow-right-line text-amber-500"></i>
+                                            <span class="text-sm font-semibold text-amber-700">Umbenennung:</span>
+                                            <code class="text-sm font-mono text-amber-700" x-text="deviceGroup && deviceGroup.device ? deviceGroup.device.current_name : ''"></code>
+                                            <i class="ri-arrow-right-line text-amber-500"></i>
+                                            <code class="text-sm font-mono text-green-700 font-semibold" x-text="getDevicePreviewName(deviceGroup.device)"></code>
+                                        </div>
+                                        <div class="text-xs text-gray-500 ml-6">
+                                            Alle zugehörigen Entity IDs werden entsprechend angepasst
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- No Device Header -->
+                                <div x-show="deviceGroup && !deviceGroup.device" class="flex items-center justify-between">
+                                    <div class="flex items-center space-x-3">
+                                        <i class="ri-cpu-line text-gray-400"></i>
+                                        <div>
+                                            <h3 class="font-semibold text-gray-600">Entities ohne Gerät</h3>
+                                            <p class="text-xs text-gray-500">Diese Entities sind keinem Gerät zugeordnet</p>
+                                        </div>
+                                    </div>
+                                    <span class="text-sm text-gray-500">
+                                        <span x-text="deviceGroup && deviceGroup.entities ? deviceGroup.entities.length : 0"></span> Entities
+                                    </span>
+                                </div>
+                            </div>
+
+                            <!-- Entities -->
+                            <div class="divide-y divide-gray-100">
+                                <template x-for="entity in (deviceGroup && deviceGroup.entities ? deviceGroup.entities : [])" :key="entity ? entity.old_id : ''">
+                                    <template x-if="entity">
+                                    <div class="entity-card hover:bg-gray-50"
+                                         :class="[
+                                             entity && entity.needs_rename ? 'needs-rename' : 'already-correct',
+                                             entity && entity.selected ? 'selected' : '',
+                                             deviceGroup && deviceGroup.device && deviceGroup.device.selected ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+                                         ]"
+                                         @click="!(deviceGroup && deviceGroup.device && deviceGroup.device.selected) && toggleSelection(entity)">
+                                        <div class="p-4">
+                                            <div class="flex items-start space-x-4">
+                                                <!-- Selection Indicator -->
+                                                <div class="pt-1 selection-indicator">
+                                                    <div class="w-6 h-6 rounded-full flex items-center justify-center"
+                                                         :class="[
+                                                             entity && entity.selected ? 'bg-blue-600' : (deviceGroup && deviceGroup.device && deviceGroup.device.selected ? 'bg-gray-200' : 'bg-gray-300'),
+                                                             deviceGroup && deviceGroup.device && deviceGroup.device.selected ? 'cursor-not-allowed' : 'cursor-pointer'
+                                                         ]">
+                                                        <i class="text-white text-sm"
+                                                           :class="entity && entity.selected ? 'ri-check-line' : ''"></i>
+                                                    </div>
+                                                </div>
+
+                                                <!-- Entity Info -->
+                                                <div class="flex-1">
+                                                    <div class="grid md:grid-cols-2 gap-4">
+                                                        <!-- Current State -->
+                                                        <div>
+                                                            <h4 class="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Aktuell</h4>
+                                                            <div class="space-y-1">
+                                                                <div class="flex items-center space-x-2">
+                                                                    <i class="ri-key-line text-gray-400"></i>
+                                                                    <code class="text-sm font-mono text-gray-900" x-text="entity ? entity.old_id : ''"></code>
+                                                                </div>
+                                                                <div class="flex items-center space-x-2">
+                                                                    <i class="ri-text-line text-gray-400"></i>
+                                                                    <span class="text-sm text-gray-700" x-text="entity ? entity.current_name : ''"></span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                        <!-- New State -->
+                                                        <div>
+                                                            <h4 class="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">
+                                                                <span x-show="entity && entity.needs_rename" x-text="entity && entity.has_override ? 'Änderung' : 'Vorschlag'"></span>
+                                                                <span x-show="entity && !entity.needs_rename && !entity.has_maintained_label">Wird mit Label versehen</span>
+                                                                <span x-show="entity && !entity.needs_rename && entity.has_maintained_label">Bereits bearbeitet</span>
+                                                            </h4>
+                                                            <div class="space-y-1">
+                                                                <div class="flex items-center space-x-2">
+                                                                    <i class="ri-key-line" :class="entity && entity.needs_rename ? 'text-amber-500' : 'text-gray-400'"></i>
+                                                                    <code class="text-sm font-mono"
+                                                                          :class="entity && entity.needs_rename ? (entity && entity.has_override ? 'text-blue-700 font-semibold' : 'text-amber-700 font-semibold') : 'text-gray-500'"
+                                                                          x-text="entity && entity.editing ? getEntityPreviewId(entity) : (entity ? entity.new_id : '')"></code>
+                                                                </div>
+                                                                <div class="flex items-center space-x-2">
+                                                                    <i class="ri-text-line text-gray-400"></i>
+                                                                    <span class="text-sm text-gray-700"
+                                                                          x-text="entity && entity.editing ? getEntityFriendlyName(entity) : (entity ? entity.new_name : '')"></span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <!-- Entity Renaming Suggestion -->
+                                                    <div x-show="entity" class="mt-3 pt-3 border-t border-gray-100">
+                                                        <div class="flex items-center space-x-4">
+                                                            <div class="flex-1">
+                                                                <div class="flex items-center space-x-2">
+                                                                    <span x-show="entity" class="text-xs text-gray-500" x-text="entity && entity.has_override ? 'Basisname:' : (entity && entity.needs_rename ? 'Vorschlag:' : 'Basisname:')"></span>
+                                                                    <template x-if="entity && !entity.editing">
+                                                                        <code class="text-sm font-mono cursor-pointer hover:underline"
+                                                                              :class="entity ? (entity.has_override ? 'text-blue-700' : 'text-amber-700') : 'text-gray-500'"
+                                                                              x-text="entity ? (entity.has_override ? entity.override_name : getEntitySuggestion(entity)) : ''"
+                                                                              @click="startEntityEdit(entity)"></code>
+                                                                    </template>
+                                                                    <template x-if="entity && entity.editing">
+                                                                        <input type="text"
+                                                                               x-model="entity.override_name"
+                                                                               @input=""
+                                                                               @keyup.enter="saveEntityEdit(entity)"
+                                                                               @keyup.escape.stop="cancelEntityEdit(entity)"
+                                                                               @blur="handleEntityBlur($event, entity)"
+                                                                               class="text-sm font-mono px-2 py-1 border border-amber-500 rounded focus:ring-2 focus:ring-blue-500"
+                                                                               placeholder="Basisname"
+                                                                               x-init="$nextTick(() => $el.focus())">
+                                                                    </template>
+                                                                </div>
+                                                            </div>
+                                                            <div class="flex items-center space-x-2">
+                                                                <button x-show="entity && !entity.has_override && !entity.editing && entity.needs_rename"
+                                                                            @click="acceptEntitySuggestion(entity)"
+                                                                            class="text-xs text-green-600 hover:text-green-700">
+                                                                        <i class="ri-check-line mr-1"></i>
+                                                                        Vorschlag annehmen
+                                                                    </button>
+                                                                <span x-show="entity && entity.editing" class="text-xs text-gray-500 italic">
+                                                                    Enter zum Speichern, ESC zum Abbrechen
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <!-- Actions -->
+                                                    <div class="mt-3 flex items-center space-x-4">
+                                                        <button @click.stop="entity && showDependencies(entity.old_id)"
+                                                                class="text-xs text-blue-600 hover:text-blue-700 flex items-center">
+                                                            <i class="ri-links-line mr-1"></i>
+                                                            Dependencies anzeigen
+                                                        </button>
+                                                        <span x-show="entity && !entity.needs_rename && !entity.has_maintained_label && !entity.editing" class="text-xs text-green-600 flex items-center">
+                                                            <i class="ri-checkbox-circle-line mr-1"></i>
+                                                            Wird nur mit "maintained" Label versehen
+                                                        </span>
+                                                        <span x-show="entity && !entity.needs_rename && entity.has_maintained_label && !entity.editing" class="text-xs text-gray-500 flex items-center">
+                                                            <i class="ri-checkbox-circle-fill mr-1"></i>
+                                                            Bereits mit "maintained" Label
+                                                        </span>
+                                                        <span x-show="entity && entity.selected" class="text-xs text-blue-600 flex items-center ml-auto">
+                                                            <i class="ri-checkbox-circle-fill mr-1"></i>
+                                                            Ausgewählt
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    </template>
+                                </template>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+
+            <!-- No Results -->
+            <div x-show="!loading && changes.length === 0 && selectedArea && selectedDomain" x-cloak
+                 class="bg-white rounded-lg shadow-sm p-12 text-center">
+                <i class="ri-inbox-line text-4xl text-gray-400 mb-4"></i>
+                <p class="text-gray-600">Keine Entities gefunden für diese Auswahl.</p>
+            </div>
+        </main>
+
+        <!-- Dependencies Modal -->
+        <div x-show="showDependencyModal" x-cloak
+             class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+             @click.self="showDependencyModal = false">
+            <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[80vh] overflow-hidden">
+                <div class="p-6 border-b">
+                    <h3 class="text-lg font-semibold">Dependencies für <code x-text="currentEntityId" class="text-sm bg-gray-100 px-2 py-1 rounded"></code></h3>
+                </div>
+                <div class="p-6 overflow-y-auto max-h-[60vh]">
+                    <div x-show="!dependencyData" class="text-center py-8">
+                        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                    </div>
+                    <div x-show="dependencyData" class="space-y-4">
+                        <template x-for="(deps, type) in dependencyData" :key="type">
+                            <div x-show="deps && deps.length > 0">
+                                <h4 class="font-medium text-gray-700 mb-2" x-text="`${type} (${deps.length})`"></h4>
+                                <ul class="space-y-1">
+                                    <template x-for="dep in deps" :key="dep">
+                                        <li class="text-sm text-gray-600 pl-4">
+                                            <i class="ri-arrow-right-s-line text-gray-400"></i>
+                                            <span x-text="dep"></span>
+                                        </li>
+                                    </template>
+                                </ul>
+                            </div>
+                        </template>
+                        <div x-show="!dependencyData || Object.keys(dependencyData).length === 0" class="text-center text-gray-500">
+                            Keine Dependencies gefunden
+                        </div>
+                    </div>
+                </div>
+                <div class="p-6 border-t bg-gray-50">
+                    <button @click="showDependencyModal = false"
+                            class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700">
+                        Schließen
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Success/Error Messages -->
+        <div x-show="message" x-cloak
+             class="fixed bottom-4 right-4 max-w-md"
+             x-transition:enter="transition ease-out duration-300"
+             x-transition:enter-start="opacity-0 transform translate-y-2"
+             x-transition:enter-end="opacity-100 transform translate-y-0">
+            <div class="rounded-lg shadow-lg p-4"
+                 :class="messageType === 'success' ? 'bg-green-100 text-green-800' : messageType === 'warning' ? 'bg-amber-100 text-amber-800' : 'bg-red-100 text-red-800'">
+                <div class="flex items-center">
+                    <i :class="messageType === 'success' ? 'ri-checkbox-circle-line' : 'ri-error-warning-line'"
+                       class="text-xl mr-3"></i>
+                    <p x-text="message"></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Device Rename Modal -->
+        <div x-show="deviceRenameModal" x-cloak
+             class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+             @click.self="deviceRenameModal = false">
+            <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+                <div class="p-6 border-b">
+                    <h3 class="text-lg font-semibold">Gerät umbenennen</h3>
+                </div>
+                <div class="p-6">
+                    <div x-show="selectedDevice">
+                        <p class="text-sm text-gray-600 mb-4">
+                            Aktueller Name: <span class="font-medium" x-text="selectedDevice?.name"></span>
+                        </p>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Neuer Name</label>
+                        <input type="text" x-model="newDeviceName"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                               @keyup.enter="saveDeviceRename()">
+                        <p class="text-xs text-gray-500 mt-2">
+                            Hinweis: Das Umbenennen des Geräts wird automatisch alle zugehörigen Entities aktualisieren.
+                        </p>
+                    </div>
+                </div>
+                <div class="p-6 border-t bg-gray-50 flex justify-end space-x-2">
+                    <button @click="deviceRenameModal = false"
+                            class="px-4 py-2 text-gray-600 hover:text-gray-800">
+                        Abbrechen
+                    </button>
+                    <button @click="saveDeviceRename()"
+                            class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                        Umbenennen
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function entityManager() {
+            return {
+                areas: [],
+                selectedArea: '',
+                selectedDomain: 'all',
+                availableDomains: [],
+                skipReviewed: false,
+                changes: [],
+                loading: false,
+                executing: false,
+                previewId: '',
+                needRenameCount: 0,
+                selectedCount: 0,
+                selectedDeviceCount: 0,
+                totalEntities: 0,
+                stats: {},
+                message: '',
+                messageType: 'success',
+                showDependencyModal: false,
+                currentEntityId: '',
+                dependencyData: null,
+                deviceRenameModal: false,
+                selectedDevice: null,
+                newDeviceName: '',
+                editingAreaName: false,
+                areaOverrideName: '',
+                selectedAreaData: null,
+
+                async init() {
+                    // Lade URL Parameter
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const area = urlParams.get('area');
+                    const domain = urlParams.get('domain');
+                    const skipReviewed = urlParams.get('skip_reviewed') === 'true';
+
+                    // Setze gespeicherte Werte
+                    if (skipReviewed) {
+                        this.skipReviewed = skipReviewed;
+                    }
+
+                    // Lade Areas
+                    await this.loadAreas();
+
+                    // Setze gespeicherte Filter wenn vorhanden
+                    if (area && this.areas.find(a => a.name === area)) {
+                        this.selectedArea = area;
+                        this.onAreaChange(false); // false = don't update URL yet
+
+                        if (domain && (domain === 'all' || this.availableDomains.includes(domain))) {
+                            this.selectedDomain = domain;
+                            // Lade Preview automatisch
+                            await this.loadPreview();
+                        }
+                    }
+                },
+
+                updateURL() {
+                    const params = new URLSearchParams();
+                    if (this.selectedArea) params.set('area', this.selectedArea);
+                    if (this.selectedDomain) params.set('domain', this.selectedDomain);
+                    if (this.skipReviewed) params.set('skip_reviewed', 'true');
+
+                    const newURL = window.location.pathname + (params.toString() ? '?' + params.toString() : '');
+                    window.history.replaceState({}, '', newURL);
+                },
+
+                async loadAreas() {
+                    try {
+                        const response = await fetch('/api/areas');
+                        this.areas = await response.json();
+
+                        // Load stats
+                        const statsResponse = await fetch('/api/stats');
+                        this.stats = await statsResponse.json();
+                    } catch (error) {
+                        this.showMessage('Fehler beim Laden der Areas', 'error');
+                    }
+                },
+
+                onAreaChange(updateUrl = true) {
+                    // Speichere die aktuelle Domain
+                    const previousDomain = this.selectedDomain;
+
+                    this.selectedDomain = 'all';  // Default to "all" instead of empty
+                    this.changes = [];
+
+                    if (this.selectedArea) {
+                        const area = this.areas.find(a => a.name === this.selectedArea);
+                        this.selectedAreaData = area;
+                        this.availableDomains = area ? area.domains : [];
+
+                        // Wenn die vorherige Domain auch im neuen Raum existiert, behalte sie
+                        if (previousDomain && previousDomain !== 'all' && this.availableDomains.includes(previousDomain)) {
+                            this.selectedDomain = previousDomain;
+                        }
+
+                        // Lade automatisch die Preview mit "all" domains
+                        this.loadPreview();
+                    } else {
+                        this.availableDomains = [];
+                    }
+
+                    if (updateUrl) {
+                        this.updateURL();
+                    }
+                },
+
+                async onDomainChange() {
+                    this.updateURL();
+                    // Automatisch laden wenn beide Filter gesetzt sind
+                    if (this.selectedArea && this.selectedDomain) {
+                        await this.loadPreview();
+                    }
+                },
+
+                async loadPreview() {
+                    if (!this.selectedArea || !this.selectedDomain) return;
+
+                    this.loading = true;
+                    this.changes = [];
+                    this.updateURL();
+
+                    try {
+                        const response = await fetch('/api/preview', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                area: this.selectedArea,
+                                domain: this.selectedDomain,
+                                skip_reviewed: this.skipReviewed
+                            })
+                        });
+
+                        const data = await response.json();
+                        this.previewId = data.preview_id;
+                        this.changes = data.changes;
+                        this.needRenameCount = data.need_rename;
+                        this.totalEntities = data.total;
+
+                        // Debug: Check data structure
+                        console.log('Preview data received:', {
+                            totalGroups: this.changes.length,
+                            firstGroup: this.changes[0],
+                            isGrouped: this.changes[0]?.device !== undefined
+                        });
+
+                        this.updateSelectedCount();
+                    } catch (error) {
+                        console.error('Fehler beim Laden:', error);
+                        const errorMsg = error.response?.data?.error || error.message || 'Unbekannter Fehler';
+                        this.showMessage(`Fehler beim Laden der Entities: ${errorMsg}`, 'error');
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+
+                updateSelectedCount() {
+                    let count = 0;
+                    let deviceCount = 0;
+                    this.changes.forEach(deviceGroup => {
+                        if (deviceGroup && deviceGroup.device && deviceGroup.device.selected) {
+                            deviceCount++;
+                        }
+                        if (deviceGroup && deviceGroup.entities) {
+                            count += deviceGroup.entities.filter(e => e && e.selected).length;
+                        }
+                    });
+                    this.selectedCount = count;
+                    this.selectedDeviceCount = deviceCount;
+                },
+
+                selectAll() {
+                    this.changes.forEach(deviceGroup => {
+                        if (deviceGroup && deviceGroup.entities) {
+                            deviceGroup.entities.forEach(e => {
+                                if (e) e.selected = true;
+                            });
+                        }
+                        if (deviceGroup && deviceGroup.device && deviceGroup.device.needs_rename) {
+                            deviceGroup.device.selected = true;
+                        }
+                    });
+                    this.updateSelectedCount();
+                },
+
+                selectNone() {
+                    this.changes.forEach(deviceGroup => {
+                        if (deviceGroup && deviceGroup.entities) {
+                            deviceGroup.entities.forEach(e => {
+                                if (e) e.selected = false;
+                            });
+                        }
+                        if (deviceGroup && deviceGroup.device) {
+                            deviceGroup.device.selected = false;
+                        }
+                    });
+                    this.updateSelectedCount();
+                },
+
+                getExecuteButtonText() {
+                    let text = [];
+                    if (this.selectedDeviceCount > 0) {
+                        text.push(`${this.selectedDeviceCount} ${this.selectedDeviceCount === 1 ? 'Gerät' : 'Geräte'}`);
+                    }
+                    if (this.selectedCount > 0) {
+                        text.push(`${this.selectedCount} ${this.selectedCount === 1 ? 'Entity' : 'Entities'}`);
+                    }
+                    return text.join(' und ') + ' verarbeiten';
+                },
+
+                getDevicePreviewName(device) {
+                    // Berechne den vollständigen Gerätenamen basierend auf dem aktuellen Override
+                    if (!device) return '';
+
+                    // Extrahiere den Raumnamen aus suggested_name (vor dem ersten Space nach Raum)
+                    const parts = device.suggested_name.split(' ');
+                    const roomName = parts[0]; // Erster Teil ist der Raum
+
+                    // Verwende Override wenn vorhanden, sonst suggested_base_name
+                    const baseName = device.override_name || device.suggested_base_name;
+
+                    // Baue vollständigen Namen
+                    return `${roomName} ${baseName}`;
+                },
+
+                getEntitySuggestion(entity) {
+                    if (!entity || !entity.new_id) return 'Sensor';
+
+                    // Extrahiere einen schönen Namen aus der Entity ID
+                    const idParts = entity.new_id.split('.');
+                    if (idParts.length > 1) {
+                        const entityPart = idParts[1];
+                        const underscoreParts = entityPart.split('_');
+                        const entityType = underscoreParts[underscoreParts.length - 1];
+                        // Konvertiere zu schönem Namen mit Großbuchstaben
+                        return entityType.charAt(0).toUpperCase() + entityType.slice(1);
+                    }
+                    return 'Sensor';
+                },
+
+                getEntityPreviewId(entity) {
+                    if (!entity) return '';
+
+                    // Während der Bearbeitung immer berechnen
+                    if (!entity.editing && !entity.needs_rename) {
+                        return entity.new_id || ''; // Verwende die vom Backend berechnete ID
+                    }
+
+                    // Wenn kein Override Name vorhanden (während Bearbeitung), verwende leeren String
+                    if (!entity.override_name) {
+                        return entity.new_id || '';
+                    }
+
+                    // Extrahiere Domain
+                    const idParts = entity.new_id.split('.');
+                    if (idParts.length < 2) return entity.new_id;
+                    const domain = idParts[0];
+
+                    // Finde das Device zu dieser Entity
+                    let roomName = null;
+                    let deviceBaseName = null;
+
+                    for (let change of this.changes) {
+                        // Prüfe ob die Entity zu diesem Device gehört
+                        if (change && change.device && change.entities && change.entities.some(e => e && e.old_id === entity.old_id)) {
+                            const device = change.device;
+
+                            // Hole Device Basisnamen (mit Override wenn vorhanden)
+                            deviceBaseName = device.override_name || device.suggested_base_name;
+
+                            // Extrahiere Raum aus Device suggested_name
+                            const parts = device.suggested_name.split(' ');
+                            roomName = parts[0].toLowerCase();
+                            break;
+                        }
+                    }
+
+                    // Fallback: Extrahiere Raum aus Entity ID wenn kein Device
+                    if (!roomName) {
+                        const entityPart = idParts[1];
+                        const underscoreParts = entityPart.split('_');
+
+                        const knownRooms = ['wohnzimmer', 'buro', 'kuche', 'schlafzimmer', 'badezimmer',
+                                          'kinderzimmer', 'eingang', 'diele', 'balkon', 'kammer', 'dusche', 'keller'];
+
+                        for (let part of underscoreParts) {
+                            if (knownRooms.includes(part)) {
+                                roomName = part;
+                                break;
+                            }
+                        }
+                    }
+
+                    // Normalisiere alle Teile
+                    const normalizeString = (str) => {
+                        return str.toLowerCase()
+                            .replace(/ä/g, 'a').replace(/ö/g, 'o').replace(/ü/g, 'u')
+                            .replace(/ß/g, 'ss').replace(/[^a-z0-9]+/g, '_')
+                            .replace(/_+/g, '_').replace(/^_|_$/g, '');
+                    };
+
+                    // Baue neue Entity ID: Raum_Device_Entity
+                    const parts = [];
+                    if (roomName) parts.push(normalizeString(roomName));
+                    if (deviceBaseName) parts.push(normalizeString(deviceBaseName));
+                    parts.push(normalizeString(entity.override_name));
+
+                    return `${domain}.${parts.join('_')}`;
+                },
+
+                getEntityFriendlyName(entity) {
+                    if (!entity) return '';
+
+                    // Während der Bearbeitung immer berechnen
+                    if (!entity.editing && !entity.needs_rename) {
+                        return entity.new_name || ''; // Verwende den vom Backend berechneten Namen
+                    }
+
+                    // Wenn kein Override Name vorhanden, verwende den vom Backend berechneten Namen
+                    if (!entity.override_name) {
+                        return entity.new_name || '';
+                    }
+
+                    // Finde das Device zu dieser Entity
+                    let deviceName = null;
+                    let roomName = null;
+
+                    for (let change of this.changes) {
+                        // Prüfe ob die Entity zu diesem Device gehört
+                        if (change && change.device && change.entities && change.entities.some(e => e && e.old_id === entity.old_id)) {
+                            // Hole Device Namen (mit Override wenn vorhanden)
+                            const device = change.device;
+                            deviceName = device.override_name || device.suggested_base_name;
+
+                            // Extrahiere Raum aus Device suggested_name
+                            const parts = device.suggested_name.split(' ');
+                            roomName = parts[0];
+                            break;
+                        }
+                    }
+
+                    // Wenn kein Device, extrahiere Raum aus Entity ID
+                    if (!roomName) {
+                        const idParts = entity.new_id.split('.');
+                        if (idParts.length > 1) {
+                            const entityPart = idParts[1];
+                            const underscoreParts = entityPart.split('_');
+
+                            const knownRooms = ['wohnzimmer', 'buro', 'kuche', 'schlafzimmer', 'badezimmer',
+                                              'kinderzimmer', 'eingang', 'diele', 'balkon', 'kammer', 'dusche', 'keller'];
+
+                            for (let part of underscoreParts) {
+                                if (knownRooms.includes(part)) {
+                                    roomName = part.replace('buro', 'büro').replace('kuche', 'küche');
+                                    roomName = roomName.charAt(0).toUpperCase() + roomName.slice(1);
+                                    break;
+                                }
+                            }
+                        }
+                    }
+
+                    // Baue Friendly Name
+                    const parts = [];
+                    if (roomName) parts.push(roomName);
+                    if (deviceName && !roomName.toLowerCase().includes(deviceName.toLowerCase())) {
+                        parts.push(deviceName);
+                    }
+                    parts.push(entity.override_name);
+
+                    return parts.join(' ');
+                },
+
+                toggleSelection(entity) {
+                    entity.selected = !entity.selected;
+                    this.updateSelectedCount();
+                },
+
+                toggleDeviceSelection(device) {
+                    device.selected = !device.selected;
+
+                    // Wenn Device ausgewählt wird, deselektiere alle seine Entities
+                    if (device.selected) {
+                        this.changes.forEach(deviceGroup => {
+                            if (deviceGroup.device && deviceGroup.device.id === device.id) {
+                                deviceGroup.entities.forEach(entity => {
+                                    entity.selected = false;
+                                });
+                            }
+                        });
+                    }
+
+                    this.updateSelectedCount();
+                },
+
+                startDeviceEdit(device) {
+                    device.editing = true;
+                    // Speichere den Original-Wert für Cancel
+                    device._original_override_name = device.override_name;
+                    // Wenn ein Override existiert, zeige diesen, sonst den Vorschlag
+                    device.override_name = device.has_override ? device.override_name : device.suggested_base_name;
+
+                    // Focus will be handled by x-init on the input element
+                },
+
+                cancelDeviceEdit(device) {
+                    device.editing = false;
+                    // Stelle den ursprünglichen Zustand wieder her
+                    if (device._original_override_name !== undefined) {
+                        device.override_name = device._original_override_name;
+                        delete device._original_override_name;
+                    } else if (!device.has_override) {
+                        // Wenn kein Override existiert, lösche override_name
+                        delete device.override_name;
+                    }
+                },
+
+                handleDeviceBlur(event, device) {
+                    // Kleine Verzögerung um zu prüfen ob Enter gedrückt wurde
+                    setTimeout(() => {
+                        if (device.editing) {
+                            this.cancelDeviceEdit(device);
+                        }
+                    }, 200);
+                },
+
+                async saveDeviceEdit(device) {
+                    device.editing = false;
+
+                    try {
+                        const response = await fetch('/api/set_device_override', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                device_id: device.id,
+                                override_name: device.override_name || null
+                            })
+                        });
+
+                        if (response.ok) {
+                            // Reload preview to show updated names
+                            await this.loadPreview();
+                        } else {
+                            const error = await response.json();
+                            this.showMessage(`Fehler: ${error.error}`, 'error');
+                        }
+                    } catch (error) {
+                        this.showMessage('Fehler beim Speichern des Device Override', 'error');
+                    }
+                },
+
+                async saveDeviceRename() {
+                    if (!this.selectedDevice || !this.newDeviceName.trim()) return;
+
+                    try {
+                        const response = await fetch('/api/rename_device', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                device_id: this.selectedDevice.id,
+                                new_name: this.newDeviceName.trim()
+                            })
+                        });
+
+                        if (response.ok) {
+                            this.showMessage('Gerät wurde erfolgreich umbenannt', 'success');
+                            this.deviceRenameModal = false;
+                            // Reload preview to show updated entity names
+                            await this.loadPreview();
+                        } else {
+                            const error = await response.json();
+                            this.showMessage(`Fehler: ${error.error}`, 'error');
+                        }
+                    } catch (error) {
+                        this.showMessage('Fehler beim Umbenennen des Geräts', 'error');
+                    }
+                },
+
+                async renameDeviceInHA(device) {
+                    if (!device.has_override || !device.override_name) {
+                        this.showMessage('Kein Override-Name gesetzt', 'warning');
+                        return;
+                    }
+
+                    if (!confirm(`Möchten Sie das Gerät "${device.current_name}" wirklich in Home Assistant zu "${device.override_name}" umbenennen?`)) {
+                        return;
+                    }
+
+                    try {
+                        const response = await fetch('/api/rename_device_in_ha', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                device_id: device.id,
+                                new_name: device.override_name
+                            })
+                        });
+
+                        if (response.ok) {
+                            const result = await response.json();
+                            this.showMessage(result.message || 'Gerät erfolgreich in Home Assistant umbenannt', 'success');
+                            // Reload preview to show updated names
+                            await this.loadPreview();
+                        } else {
+                            const error = await response.json();
+                            this.showMessage(`Fehler: ${error.error}`, 'error');
+                        }
+                    } catch (error) {
+                        this.showMessage('Fehler beim Umbenennen des Geräts in Home Assistant', 'error');
+                    }
+                },
+
+                startEntityEdit(entity) {
+                    // Set editing mode
+                    entity.editing = true;
+                    // Speichere den Original-Wert für Cancel
+                    entity._original_override_name = entity.override_name;
+
+                    // Wenn ein Override existiert, zeige diesen, sonst extrahiere nur den Entity-Typ
+                    if (!entity.has_override) {
+                        // Schlage einen schönen Namen vor basierend auf dem Entity-Typ
+                        // z.B. "light.diele_deckenspot_licht" -> "Licht"
+                        const idParts = entity.new_id.split('.');
+                        if (idParts.length > 1) {
+                            const entityPart = idParts[1]; // "diele_deckenspot_licht"
+                            const underscoreParts = entityPart.split('_');
+                            // Nimm den letzten Teil als Entity-Typ und mache ihn schön
+                            const entityType = underscoreParts[underscoreParts.length - 1];
+                            // Konvertiere zu schönem Namen
+                            entity.override_name = entityType.charAt(0).toUpperCase() + entityType.slice(1);
+                        } else {
+                            entity.override_name = entity.new_id;
+                        }
+                    }
+
+                    // Focus will be handled by x-init on the input element
+                },
+
+                cancelEntityEdit(entity) {
+                    entity.editing = false;
+                    // Stelle den ursprünglichen Zustand wieder her
+                    if (entity._original_override_name !== undefined) {
+                        entity.override_name = entity._original_override_name;
+                        delete entity._original_override_name;
+                    } else if (!entity.has_override) {
+                        // Wenn kein Override existiert, lösche override_name
+                        delete entity.override_name;
+                    }
+                },
+
+                handleEntityBlur(event, entity) {
+                    if (!entity) return;
+
+                    // Kleine Verzögerung um zu prüfen ob Enter gedrückt wurde
+                    setTimeout(() => {
+                        if (entity && entity.editing) {
+                            this.cancelEntityEdit(entity);
+                        }
+                    }, 200);
+                },
+
+                acceptEntitySuggestion(entity) {
+                    if (!entity || !entity.new_id) return;
+
+                    // Extrahiere einen schönen Namen aus der Entity ID
+                    const idParts = entity.new_id.split('.');
+                    if (idParts.length > 1) {
+                        const entityPart = idParts[1];
+                        const underscoreParts = entityPart.split('_');
+                        const entityType = underscoreParts[underscoreParts.length - 1];
+                        // Konvertiere zu schönem Namen mit Großbuchstaben
+                        entity.override_name = entityType.charAt(0).toUpperCase() + entityType.slice(1);
+                    } else {
+                        entity.override_name = entity.new_id;
+                    }
+                    this.saveEntityEdit(entity);
+                },
+
+                async saveEntityEdit(entity) {
+                    try {
+                        const response = await fetch('/api/set_entity_override', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                registry_id: entity.registry_id,
+                                override_name: entity.override_name || null
+                            })
+                        });
+
+                        if (response.ok) {
+                            // Setze has_override Flag
+                            entity.has_override = !!entity.override_name;
+
+                            // Aktualisiere die berechneten IDs/Namen während editing noch true ist
+                            entity.new_id = this.getEntityPreviewId(entity);
+                            entity.new_name = this.getEntityFriendlyName(entity);
+
+                            // Jetzt erst editing auf false setzen
+                            entity.editing = false;
+
+                            // Zeige Erfolgsmeldung
+                            this.showMessage('Override gespeichert', 'success');
+                        } else {
+                            entity.editing = false;
+                            const error = await response.json();
+                            this.showMessage(`Fehler: ${error.error}`, 'error');
+                        }
+                    } catch (error) {
+                        entity.editing = false;
+                        this.showMessage('Fehler beim Speichern des Entity Override', 'error');
+                    }
+                },
+
+                startAreaEdit() {
+                    if (!this.selectedAreaData) return;
+                    this.editingAreaName = true;
+                    this.areaOverrideName = this.selectedAreaData.has_override ?
+                        this.selectedAreaData.override_name : this.selectedAreaData.name;
+                },
+
+                cancelAreaEdit() {
+                    this.editingAreaName = false;
+                    this.areaOverrideName = '';
+                },
+
+                handleAreaBlur(event) {
+                    // Kleine Verzögerung um zu prüfen ob Enter gedrückt wurde
+                    setTimeout(() => {
+                        if (this.editingAreaName) {
+                            this.cancelAreaEdit();
+                        }
+                    }, 200);
+                },
+
+                async saveAreaEdit() {
+                    this.editingAreaName = false;
+
+                    if (!this.selectedAreaData || !this.selectedAreaData.area_id) {
+                        this.showMessage('Kein Bereich ausgewählt', 'error');
+                        return;
+                    }
+
+                    try {
+                        const response = await fetch('/api/set_area_override', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                area_id: this.selectedAreaData.area_id,
+                                override_name: this.areaOverrideName || null
+                            })
+                        });
+
+                        if (response.ok) {
+                            // Reload areas to show updated names
+                            await this.loadAreas();
+                            // Update selectedAreaData
+                            const area = this.areas.find(a => a.name === this.selectedArea);
+                            this.selectedAreaData = area;
+                        } else {
+                            const error = await response.json();
+                            this.showMessage(`Fehler: ${error.error}`, 'error');
+                        }
+                    } catch (error) {
+                        this.showMessage('Fehler beim Speichern des Area Override', 'error');
+                    }
+                },
+
+                async onFilterChange() {
+                    this.updateURL();
+                    // Reload wenn beide Filter gesetzt sind
+                    if (this.selectedArea && this.selectedDomain) {
+                        await this.loadPreview();
+                    }
+                },
+
+                async executeChanges() {
+                    if (this.selectedCount === 0 && this.selectedDeviceCount === 0) return;
+
+                    const confirmText = this.getExecuteButtonText().replace(' verarbeiten', '');
+                    if (!confirm(`Wirklich ${confirmText} verarbeiten?`)) return;
+
+                    this.executing = true;
+                    const selectedEntities = [];
+                    const selectedDevices = [];
+
+                    // Sammle alle ausgewählten Entities und Devices
+                    this.changes.forEach(deviceGroup => {
+                        if (deviceGroup.device && deviceGroup.device.selected) {
+                            selectedDevices.push({
+                                device_id: deviceGroup.device.id,
+                                new_name: this.getDevicePreviewName(deviceGroup.device),
+                                base_name: deviceGroup.device.override_name || deviceGroup.device.suggested_base_name,
+                                entities: deviceGroup.entities.map(e => e.old_id)
+                            });
+                        }
+                        deviceGroup.entities.forEach(entity => {
+                            if (entity.selected) {
+                                selectedEntities.push(entity.old_id);
+                            }
+                        });
+                    });
+
+                    try {
+                        const response = await fetch('/api/execute', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                preview_id: this.previewId,
+                                selected_entities: selectedEntities,
+                                selected_devices: selectedDevices
+                            })
+                        });
+
+                        const result = await response.json();
+
+                        const successCount = result.success.length;
+                        const failedCount = result.failed.length;
+                        const skippedCount = result.skipped.length;
+                        const warningCount = result.dependency_warnings ? result.dependency_warnings.length : 0;
+                        const deviceSuccessCount = result.device_success ? result.device_success.length : 0;
+                        const deviceFailedCount = result.device_failed ? result.device_failed.length : 0;
+
+                        // Zeige detaillierte Erfolgsmeldung
+                        let messageParts = [];
+
+                        if (deviceSuccessCount > 0 || deviceFailedCount > 0) {
+                            let deviceMsg = `Geräte: ${deviceSuccessCount} erfolgreich`;
+                            if (deviceFailedCount > 0) {
+                                deviceMsg += `, ${deviceFailedCount} Fehler`;
+                            }
+                            messageParts.push(deviceMsg);
+                        }
+
+                        if (successCount > 0 || failedCount > 0 || skippedCount > 0) {
+                            let entityMsg = `Entities: ${successCount} erfolgreich`;
+                            if (skippedCount > 0) {
+                                entityMsg += `, ${skippedCount} übersprungen`;
+                            }
+                            if (failedCount > 0) {
+                                entityMsg += `, ${failedCount} Fehler`;
+                            }
+                            messageParts.push(entityMsg);
+                        }
+
+                        if (warningCount > 0) {
+                            messageParts.push(`${warningCount} Dependency-Warnungen`);
+                        }
+
+                        const message = messageParts.join(' | ');
+
+                        const hasErrors = failedCount > 0 || deviceFailedCount > 0;
+                        this.showMessage(message, hasErrors ? 'error' : warningCount > 0 ? 'warning' : 'success');
+
+                        // Zeige Dependency Warnings wenn vorhanden
+                        if (warningCount > 0) {
+                            this.showDependencyWarnings(result.dependency_warnings);
+                        }
+
+                        // Warte kurz, damit Home Assistant die Änderungen verarbeiten kann
+                        setTimeout(async () => {
+                            // Lade zuerst die Areas neu (damit die Entity-Listen aktualisiert werden)
+                            await this.loadAreas();
+                            // Dann lade die Preview
+                            await this.loadPreview();
+                        }, 1500);
+                    } catch (error) {
+                        this.showMessage('Fehler beim Ausführen der Änderungen', 'error');
+                    } finally {
+                        this.executing = false;
+                    }
+                },
+
+                async showDependencies(entityId) {
+                    this.currentEntityId = entityId;
+                    this.showDependencyModal = true;
+                    this.dependencyData = null;
+
+                    try {
+                        const response = await fetch(`/api/dependencies/${encodeURIComponent(entityId)}`);
+                        this.dependencyData = await response.json();
+                    } catch (error) {
+                        this.dependencyData = { error: 'Fehler beim Laden der Dependencies' };
+                    }
+                },
+
+                showMessage(msg, type = 'success') {
+                    this.message = msg;
+                    this.messageType = type;
+                    setTimeout(() => {
+                        this.message = '';
+                    }, type === 'warning' ? 10000 : 5000);
+                },
+
+                showDependencyWarnings(warnings) {
+                    // Erstelle eine detaillierte Warnung
+                    const warningDiv = document.createElement('div');
+                    warningDiv.className = 'fixed bottom-20 right-4 max-w-md bg-amber-100 border border-amber-400 text-amber-700 px-4 py-3 rounded-lg shadow-lg';
+                    warningDiv.innerHTML = `
+                        <div class="flex items-start">
+                            <i class="ri-alert-line text-xl mr-3 mt-0.5"></i>
+                            <div>
+                                <p class="font-semibold">Dependencies konnten nicht automatisch aktualisiert werden</p>
+                                <p class="text-sm mt-1">Bitte prüfe folgende Entities manuell in Home Assistant:</p>
+                                <ul class="text-sm mt-2 space-y-1">
+                                    ${warnings.map(w => `<li class="flex items-center"><i class="ri-arrow-right-s-line mr-1"></i><code class="bg-amber-50 px-1 rounded">${w.entity_id}</code></li>`).join('')}
+                                </ul>
+                            </div>
+                            <button onclick="this.parentElement.parentElement.remove()" class="ml-4">
+                                <i class="ri-close-line text-xl hover:text-amber-900"></i>
+                            </button>
+                        </div>
+                    `;
+                    document.body.appendChild(warningDiv);
+
+                    // Automatisch nach 15 Sekunden entfernen
+                    setTimeout(() => {
+                        if (warningDiv.parentElement) {
+                            warningDiv.remove();
+                        }
+                    }, 15000);
+                }
+            }
+        }
+    </script>
+</body>
+</html>
