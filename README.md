@@ -1,6 +1,10 @@
 # Home Assistant Entity Manager
 
-A comprehensive tool for standardizing and managing entity names in Home Assistant according to a consistent naming convention.
+[![hacs_badge](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://github.com/hacs/integration)
+[![GitHub Release](https://img.shields.io/github/release/jangrossheim/home-assistant-entity-manager.svg?style=flat-square)](https://github.com/jangrossheim/home-assistant-entity-manager/releases)
+[![License](https://img.shields.io/github/license/jangrossheim/home-assistant-entity-manager.svg?style=flat-square)](LICENSE)
+
+A Home Assistant integration for standardizing and managing entity names according to a consistent naming convention. Available through HACS (Home Assistant Community Store).
 
 ## Features
 
@@ -14,61 +18,63 @@ A comprehensive tool for standardizing and managing entity names in Home Assista
 
 ## Installation
 
-1. Clone this repository:
-```bash
-git clone https://github.com/yourusername/home-assistant-entity-manager.git
-cd home-assistant-entity-manager
-```
+### Via HACS (Recommended)
 
-2. Install dependencies:
-```bash
-pip install -r requirements.txt
-```
+1. Open HACS in your Home Assistant instance
+2. Click on "Integrations"
+3. Click the three dots in the top right corner and select "Custom repositories"
+4. Add this repository URL: `https://github.com/jangrossheim/home-assistant-entity-manager`
+5. Select "Integration" as the category
+6. Click "Add"
+7. Search for "Entity Manager" and install it
+8. Restart Home Assistant
+9. Go to Settings → Devices & Services → Add Integration → Entity Manager
 
-3. Create a `.env` file with your Home Assistant credentials:
-```env
-HA_TOKEN=your_long_lived_access_token
-HA_URL=http://your-home-assistant:8123
-```
+### Manual Installation
+
+1. Copy the `custom_components/entity_manager` folder to your Home Assistant's `custom_components` directory
+2. Restart Home Assistant
+3. Go to Settings → Devices & Services → Add Integration → Entity Manager
 
 ## Usage
 
-### Command Line Interface
+### Using Services
 
-```bash
-# Dry run - analyze entities without making changes
-python rename_entities.py --test
+After installation, the integration provides several services:
 
-# Limit to first 10 entities
-python rename_entities.py --test --limit 10
+#### `entity_manager.analyze_entities`
+Preview entity renaming without making changes.
 
-# Process only Hue devices
-python rename_entities.py --test --only-hue
-
-# Execute renaming (be careful!)
-python rename_entities.py --force
-
-# Skip entities with 'maintained' label
-python rename_entities.py --skip-reviewed
-
-# Show only entities with 'maintained' label
-python rename_entities.py --show-reviewed
+```yaml
+service: entity_manager.analyze_entities
+data:
+  limit: 10
+  skip_reviewed: true
 ```
 
-### Web Interface
+#### `entity_manager.rename_entity`
+Rename a single entity.
 
-Start the web interface:
-```bash
-python web_ui.py
+```yaml
+service: entity_manager.rename_entity
+data:
+  entity_id: light.kitchen_ceiling
 ```
 
-Then open http://localhost:5000 in your browser.
+#### `entity_manager.rename_bulk`
+Rename multiple entities at once.
 
-The web interface provides:
-- Visual overview of all entities organized by area
-- Entity renaming preview
-- Label management
-- Real-time status updates
+```yaml
+service: entity_manager.rename_bulk
+data:
+  limit: 50
+  skip_reviewed: true
+  dry_run: false  # Set to true for preview only
+```
+
+### Using the Web Interface (Coming Soon)
+
+The integration will provide a panel in the Home Assistant UI for visual entity management.
 
 ## Naming Convention
 
@@ -153,6 +159,91 @@ python check_dependencies.py    # Check entity dependencies
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
+## Troubleshooting
+
+### Common Issues
+
+#### Service not found
+If you get "Service entity_manager.analyze_entities not found":
+1. Check the integration is properly installed and loaded
+2. Restart Home Assistant
+3. Check logs for any errors during startup
+
+#### Entity rename fails
+If entity renaming fails:
+1. Check the entity ID is valid
+2. Ensure the entity is not locked or read-only
+3. Check if the new entity ID already exists
+4. Review logs for specific error messages
+
+#### Missing entities in analysis
+If entities are missing from analysis:
+1. Check if they have the "maintained" label (use `show_reviewed: true`)
+2. Increase the `limit` parameter
+3. Verify entities are registered in Home Assistant
+
+### Debug Logging
+
+Enable debug logging for the integration:
+
+```yaml
+logger:
+  default: info
+  logs:
+    custom_components.entity_manager: debug
+```
+
+## Development
+
+### Running Tests
+
+```bash
+# Install test dependencies
+pip install -r requirements-test.txt
+
+# Run tests with coverage
+pytest tests/ -v --cov=custom_components.entity_manager
+
+# Run specific test
+pytest tests/test_services.py -v
+
+# Run with coverage report
+pytest tests/ --cov=custom_components.entity_manager --cov-report=html
+```
+
+### Code Quality
+
+```bash
+# Format code
+black custom_components tests
+
+# Sort imports
+isort custom_components tests
+
+# Type checking
+mypy custom_components
+
+# Linting
+flake8 custom_components
+```
+
+## Contributing
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Ensure tests pass and coverage is maintained
+4. Commit your changes (`git commit -m 'Add amazing feature'`)
+5. Push to the branch (`git push origin feature/amazing-feature`)
+6. Open a Pull Request
+
+### Development Guidelines
+
+- All code must have type hints
+- All functions must have docstrings
+- Test coverage must be maintained above 80%
+- Follow Home Assistant development guidelines
+- Use semantic commit messages
+
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
@@ -160,5 +251,5 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## Acknowledgments
 
 - Built for Home Assistant
-- Uses the Home Assistant WebSocket and REST APIs
-- Web interface built with Flask and Tailwind CSS
+- Follows Home Assistant development standards
+- Community contributions welcome

@@ -57,3 +57,6 @@ config.local.json
 *.tmp
 *.bak
 .cache/
+
+# Legacy CLI tools (optional - uncomment to exclude)
+# legacy/
