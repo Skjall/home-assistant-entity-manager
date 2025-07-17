@@ -60,3 +60,6 @@ config.local.json
 
 # Legacy CLI tools (optional - uncomment to exclude)
 # legacy/
+
+# VEnvs
+venv-*/

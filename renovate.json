@@ -31,6 +31,12 @@
       "matchPackageNames": ["pytest-cov"],
       "allowedVersions": "3.0.0",
       "description": "Pinned due to pytest-homeassistant-custom-component dependency"
+    },
+    {
+      "matchFiles": ["requirements-test.txt"],
+      "matchPackageNames": ["pytest"],
+      "allowedVersions": "7.3.1",
+      "description": "Pinned due to pytest-homeassistant-custom-component dependency"
     }
   ],
   "vulnerabilityAlerts": {
