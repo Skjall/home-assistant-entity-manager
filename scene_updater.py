@@ -3,12 +3,14 @@
 Scene Updater - Aktualisiert Entity IDs in Scenes über die REST API
 """
 import asyncio
-import os
-import logging
-from dotenv import load_dotenv
-from ha_client import HomeAssistantClient
-import aiohttp
 import json
+import logging
+import os
+
+import aiohttp
+from dotenv import load_dotenv
+
+from ha_client import HomeAssistantClient
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

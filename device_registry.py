@@ -3,7 +3,8 @@
 Device Registry - Verwaltet Geräte in Home Assistant
 """
 import logging
-from typing import Dict, Any, Optional
+from typing import Any, Dict, Optional
+
 from ha_websocket import HomeAssistantWebSocket
 
 logger = logging.getLogger(__name__)

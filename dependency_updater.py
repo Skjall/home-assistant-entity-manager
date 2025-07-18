@@ -3,13 +3,14 @@
 Dependency Updater - Aktualisiert Entity IDs in Scenes, Scripts und Automations
 """
 import asyncio
-import os
-import logging
-from typing import Dict, List, Any, Optional
-from dotenv import load_dotenv
-import aiohttp
 import json
+import logging
+import os
 import re
+from typing import Any, Dict, List, Optional
+
+import aiohttp
+from dotenv import load_dotenv
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

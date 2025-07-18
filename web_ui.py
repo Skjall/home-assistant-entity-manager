@@ -2,24 +2,25 @@
 """
 Web UI für Home Assistant Entity Renamer - Add-on Version
 """
-import os
 import asyncio
+import json
 import logging
-from flask import Flask, render_template, jsonify, request, redirect
+import os
+from typing import Dict, List, Tuple
+
+import aiohttp
+from device_registry_updater import DeviceRegistryUpdater
+from flask import Flask, jsonify, redirect, render_template, request
 from flask_cors import CORS
 from werkzeug.middleware.proxy_fix import ProxyFix
-from typing import Dict, List, Tuple
-import json
-import aiohttp
 
-from ha_client import HomeAssistantClient
-from entity_restructurer import EntityRestructurer
-from ha_websocket import HomeAssistantWebSocket
-from entity_registry import EntityRegistry
 from dependency_updater import DependencyUpdater
 from device_registry import DeviceRegistry
+from entity_registry import EntityRegistry
+from entity_restructurer import EntityRestructurer
+from ha_client import HomeAssistantClient
+from ha_websocket import HomeAssistantWebSocket
 from naming_overrides import NamingOverrides
-from device_registry_updater import DeviceRegistryUpdater
 
 # Don't load .env in Add-on mode - use environment variables from Supervisor
 # load_dotenv()

@@ -1,5 +1,6 @@
 import logging
-from typing import Dict, List, Optional, Any
+from typing import Any, Dict, List, Optional
+
 from ha_websocket import HomeAssistantWebSocket
 
 logger = logging.getLogger(__name__)

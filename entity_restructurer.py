@@ -7,7 +7,8 @@ Erstellt komplett neue Entity IDs basierend auf der tatsächlichen Struktur:
 - Entität (Was es ist)
 """
 import logging
-from typing import Dict, List, Tuple, Optional
+from typing import Dict, List, Optional, Tuple
+
 from ha_client import HomeAssistantClient
 from naming_overrides import NamingOverrides
 
