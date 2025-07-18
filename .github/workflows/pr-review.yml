@@ -1,0 +1,57 @@
+name: Automated PR Review
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  trigger-claude-review:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Get PR diff
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          
+      - name: Generate review request comment
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const pr = context.payload.pull_request;
+            
+            // Get changed files
+            const { data: files } = await github.rest.pulls.listFiles({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: pr.number
+            });
+            
+            const changedFiles = files.map(f => f.filename).join(', ');
+            const additions = files.reduce((acc, f) => acc + f.additions, 0);
+            const deletions = files.reduce((acc, f) => acc + f.deletions, 0);
+            
+            const comment = `@claude Please review this PR:
+            
+            **PR Title:** ${pr.title}
+            **Changed files:** ${changedFiles}
+            **Changes:** +${additions} -${deletions}
+            
+            Please provide:
+            1. **Summary** of changes
+            2. **Code quality** assessment
+            3. **Security** considerations  
+            4. **Potential issues** or bugs
+            5. **Suggestions** for improvement
+            
+            Focus on Home Assistant Add-on best practices, Python code quality, and error handling.`;
+            
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: pr.number,
+              body: comment
+            });

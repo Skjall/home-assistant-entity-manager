@@ -42,3 +42,6 @@ RUN chmod a+x /etc/services.d/entity-manager/run
 # Copy finish script for proper cleanup
 COPY finish.sh /etc/services.d/entity-manager/finish
 RUN chmod a+x /etc/services.d/entity-manager/finish
+
+# Use s6-overlay init system
+CMD ["/init"]

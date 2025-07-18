@@ -8,8 +8,8 @@ bashio::log.warning "⚠️ Use at your own risk - Not recommended for productio
 export HA_URL="http://supervisor/core"
 export HA_TOKEN="${SUPERVISOR_TOKEN}"
 
-# Get log level from configuration
-LOG_LEVEL=$(bashio::config 'log_level')
+# Get log level from configuration with fallback to info
+LOG_LEVEL=$(bashio::config 'log_level' || echo 'info')
 export LOG_LEVEL
 
 bashio::log.info "Starting web UI with log level: ${LOG_LEVEL}"
