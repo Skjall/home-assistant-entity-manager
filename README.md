@@ -5,15 +5,15 @@
 [![GitHub Release](https://img.shields.io/github/release/Skjall/home-assistant-entity-manager.svg?style=flat-square)](https://github.com/Skjall/home-assistant-entity-manager/releases)
 [![License](https://img.shields.io/github/license/Skjall/home-assistant-entity-manager.svg?style=flat-square)](LICENSE)
 
-A Home Assistant integration for standardizing and managing entity names according to a consistent naming convention. Available through HACS (Home Assistant Community Store).
+A Home Assistant integration for standardizing and managing entity names according to a consistent, logical naming convention. Available through HACS (Home Assistant Community Store).
 
 > **⚠️ Beta Software**: This integration is currently in beta testing. While core functionality is stable, you may encounter bugs. Please report any issues on the [GitHub Issues](https://github.com/Skjall/home-assistant-entity-manager/issues) page.
 
 ## Features
 
 - **Batch Entity Renaming**: Rename multiple entities according to a standardized pattern
-- **German Naming Convention**: Follows the pattern `{room}.{device_type}.{location/name}`
-- **Room Normalization**: Automatically normalizes room names (e.g., `buro` → `buero`)
+- **Logical Naming Convention**: Follows the pattern `{room}.{device_type}.{location/name}`
+- **Character Normalization**: Automatically normalizes special characters for entity IDs (e.g., `küche` → `kuche`, `büro` → `buro`)
 - **Dependency Tracking**: Finds and updates entity references in automations and scenes
 - **Label Management**: Track entity quality and processing status
 - **Web Interface**: Visualize and manage entities through an intuitive UI
