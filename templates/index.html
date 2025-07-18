@@ -27,6 +27,26 @@
             const computedStyle = window.getComputedStyle(testDiv);
             console.log('bg-red-600 background color:', computedStyle.backgroundColor);
             document.body.removeChild(testDiv);
+            
+            // Check if CSS is actually loaded
+            fetch('static/css/styles.css')
+                .then(response => response.text())
+                .then(css => {
+                    console.log('CSS file length:', css.length);
+                    console.log('Contains bg-red-600:', css.includes('bg-red-600'));
+                    console.log('First 200 chars:', css.substring(0, 200));
+                    console.log('Last 200 chars:', css.substring(css.length - 200));
+                    
+                    // Check stylesheets loaded in document
+                    for (let sheet of document.styleSheets) {
+                        try {
+                            console.log('Stylesheet href:', sheet.href);
+                            console.log('Rules count:', sheet.cssRules.length);
+                        } catch (e) {
+                            console.log('Cannot access stylesheet:', sheet.href, e.message);
+                        }
+                    }
+                });
         });
     </script>
 </head>
