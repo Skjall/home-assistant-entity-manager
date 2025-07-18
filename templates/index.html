@@ -8,6 +8,27 @@
     <link href="static/css/remixicon.css" rel="stylesheet">
     <script src="static/js/alpine.min.js" defer></script>
     <script src="static/js/app.js" defer></script>
+    <script>
+        // Debug: Check if we're in an iframe and what CSS is loaded
+        window.addEventListener('load', function() {
+            console.log('Entity Manager loaded');
+            console.log('In iframe:', window.self !== window.top);
+            
+            // Check all stylesheets
+            const stylesheets = document.querySelectorAll('link[rel="stylesheet"]');
+            stylesheets.forEach((link, index) => {
+                console.log(`Stylesheet ${index}:`, link.href);
+            });
+            
+            // Check if bg-red-600 style exists
+            const testDiv = document.createElement('div');
+            testDiv.className = 'bg-red-600';
+            document.body.appendChild(testDiv);
+            const computedStyle = window.getComputedStyle(testDiv);
+            console.log('bg-red-600 background color:', computedStyle.backgroundColor);
+            document.body.removeChild(testDiv);
+        });
+    </script>
 </head>
 <body class="bg-gray-50">
     <div x-data="entityManager()" x-init="init()" class="min-h-screen">
