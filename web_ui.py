@@ -8,7 +8,7 @@ import logging
 import os
 
 import aiohttp
-from flask import Flask, jsonify, render_template, request
+from flask import Flask, jsonify, render_template, request, send_from_directory
 from flask_cors import CORS
 from werkzeug.middleware.proxy_fix import ProxyFix
 
@@ -225,6 +225,16 @@ async def load_areas_and_entities():
 def index():
     """Hauptseite"""
     return render_template("index.html")
+
+
+@app.route("/static/css/<path:filename>")
+def serve_font_workaround(filename):
+    """Workaround to serve font files from fonts directory when requested from css directory"""
+    if filename.startswith("remixicon.") and filename.endswith((".woff", ".woff2", ".ttf", ".eot", ".svg")):
+        # Strip query parameters
+        filename = filename.split("?")[0]
+        return send_from_directory("static/fonts", filename)
+    return send_from_directory("static/css", filename)
 
 
 @app.route("/api/areas")
