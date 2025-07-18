@@ -187,7 +187,7 @@ All pull requests are automatically reviewed by Claude Code. The review bot will
 - Review error handling and edge cases
 - Ensure documentation is adequate
 
-You can also trigger additional reviews by commenting `@claude` in the PR.
+You can also trigger additional reviews by commenting `@claude` in any PR or issue.
 
 ### Development Guidelines
 
