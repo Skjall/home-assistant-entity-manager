@@ -15,6 +15,7 @@ WORKDIR /build
 COPY package.json package-lock.json postcss.config.js tailwind.config.js ./
 COPY src/ ./src/
 COPY scripts/ ./scripts/
+COPY templates/ ./templates/
 RUN npm ci && \
     npm run build && \
     mkdir -p /app/static && \
