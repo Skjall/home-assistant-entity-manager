@@ -32,14 +32,13 @@ WORKDIR /app
 # Copy optional naming_overrides.json if it exists
 RUN echo '{}' > /app/naming_overrides.json
 
-# Create startup script
-RUN echo '#!/usr/bin/env bashio' > /run.sh && \
-    echo 'bashio::log.info "Starting Entity Manager..."' >> /run.sh && \
-    echo 'bashio::log.warning "⚠️ ALPHA VERSION - This add-on is in early development!"' >> /run.sh && \
-    echo 'bashio::log.warning "⚠️ Use at your own risk - Not recommended for production!"' >> /run.sh && \
-    echo 'export HA_URL="http://supervisor/core"' >> /run.sh && \
-    echo 'export HA_TOKEN="${SUPERVISOR_TOKEN}"' >> /run.sh && \
-    echo 'exec python3 web_ui.py' >> /run.sh && \
-    chmod a+x /run.sh
+# Create s6-overlay service directory
+RUN mkdir -p /etc/services.d/entity-manager
 
-CMD [ "/run.sh" ]
+# Copy s6-overlay startup script
+COPY run.sh /etc/services.d/entity-manager/run
+RUN chmod a+x /etc/services.d/entity-manager/run
+
+# Copy finish script for proper cleanup
+COPY finish.sh /etc/services.d/entity-manager/finish
+RUN chmod a+x /etc/services.d/entity-manager/finish
