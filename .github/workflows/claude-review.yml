@@ -16,11 +16,19 @@ jobs:
       pull-requests: write
       issues: write
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          # For PRs, checkout the PR branch
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          
       - name: Claude Code Review
         uses: anthropics/claude-code-action@beta
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true  # Don't fail the workflow if review fails
           
   # Automatic review on PR open/update
   auto-review:
