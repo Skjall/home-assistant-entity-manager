@@ -13,7 +13,6 @@ jobs:
       matrix:
         python-version: ["3.12", "3.13"]
       fail-fast: true
-      max-parallel: 1
 
     steps:
       - uses: actions/checkout@v4
@@ -85,7 +84,6 @@ jobs:
 
   validate:
     runs-on: arc-home-assistant-entity-manager
-    needs: test
     steps:
       - uses: actions/checkout@v4
 
