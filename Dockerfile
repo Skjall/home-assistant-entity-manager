@@ -32,16 +32,8 @@ WORKDIR /app
 # Copy optional naming_overrides.json if it exists
 RUN echo '{}' > /app/naming_overrides.json
 
-# Create s6-overlay service directory
-RUN mkdir -p /etc/services.d/entity-manager
+# Copy run script
+COPY run.sh /run.sh
+RUN chmod a+x /run.sh
 
-# Copy s6-overlay startup script
-COPY run.sh /etc/services.d/entity-manager/run
-RUN chmod a+x /etc/services.d/entity-manager/run
-
-# Copy finish script for proper cleanup
-COPY finish.sh /etc/services.d/entity-manager/finish
-RUN chmod a+x /etc/services.d/entity-manager/finish
-
-# Use s6-overlay init system
-CMD ["/init"]
+# Remove CMD - let the base image handle init
