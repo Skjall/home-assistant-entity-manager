@@ -243,6 +243,29 @@ def serve_font_workaround(filename):
     return send_from_directory("static/css", filename)
 
 
+@app.route("/test/css-info")
+def test_css_info():
+    """Test route to check CSS file info"""
+    import os
+
+    css_path = os.path.join(app.static_folder, "css", "styles.css")
+    if os.path.exists(css_path):
+        file_size = os.path.getsize(css_path)
+        with open(css_path, "r") as f:
+            content = f.read()
+        return jsonify(
+            {
+                "exists": True,
+                "size": file_size,
+                "lines": len(content.splitlines()),
+                "has_bg_red": "bg-red-600" in content,
+                "has_utilities": ".bg-gray-50" in content,
+                "last_100_chars": content[-100:] if len(content) > 100 else content,
+            }
+        )
+    return jsonify({"exists": False, "path": css_path})
+
+
 @app.route("/api/areas")
 def get_areas():
     """Gibt alle Areas mit ihren Domains zurück"""
