@@ -55,7 +55,7 @@ jobs:
           echo "base_image=$BASE_IMAGE" >> $GITHUB_OUTPUT
 
       - name: Build Add-on
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           push: false
