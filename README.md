@@ -8,6 +8,8 @@
 A Home Assistant integration for standardizing and managing entity names according to a consistent, logical naming convention. Available through HACS (Home Assistant Community Store).
 
 > **⚠️ Beta Software**: This integration is currently in beta testing. While core functionality is stable, you may encounter bugs. Please report any issues on the [GitHub Issues](https://github.com/Skjall/home-assistant-entity-manager/issues) page.
+>
+> **🆕 Alpha Add-on Available**: An experimental Home Assistant Add-on version is also available for testing. See [Add-on Documentation](README_ADDON.md) for details.
 
 ## Features
 
