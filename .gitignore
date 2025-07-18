@@ -63,3 +63,6 @@ config.local.json
 
 # VEnvs
 venv-*/
+
+# AI Assistance
+CLAUDE.md
