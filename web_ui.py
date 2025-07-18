@@ -30,14 +30,14 @@ app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
 CORS(app)
 
 # Setup logging to both console and file
-log_format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+log_format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 logging.basicConfig(
     level=logging.DEBUG,
     format=log_format,
     handlers=[
         logging.StreamHandler(),  # Console output
-        logging.FileHandler('web_ui.log', mode='a')  # File output
-    ]
+        logging.FileHandler("web_ui.log", mode="a"),  # File output
+    ],
 )
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -49,20 +49,24 @@ renamer_state = {
     "areas": {},
     "entities_by_area": {},
     "proposed_changes": {},
-    "naming_overrides": NamingOverrides()
+    "naming_overrides": NamingOverrides(),
 }
+
 
 async def init_client():
     """Initialisiere den Home Assistant Client"""
     if not renamer_state["client"]:
         # In Add-on mode, use Supervisor API
-        base_url = os.getenv('HA_URL', 'http://supervisor/core')
-        token = os.getenv('HA_TOKEN', os.getenv('SUPERVISOR_TOKEN'))
+        base_url = os.getenv("HA_URL", "http://supervisor/core")
+        token = os.getenv("HA_TOKEN", os.getenv("SUPERVISOR_TOKEN"))
         logger.info(f"⚠️  ALPHA VERSION - Entity Manager Add-on")
         logger.info(f"Connecting to Home Assistant at {base_url}")
         renamer_state["client"] = HomeAssistantClient(base_url, token)
-        renamer_state["restructurer"] = EntityRestructurer(renamer_state["client"], renamer_state["naming_overrides"])
+        renamer_state["restructurer"] = EntityRestructurer(
+            renamer_state["client"], renamer_state["naming_overrides"]
+        )
     return renamer_state["client"]
+
 
 async def load_areas_and_entities():
     """Lade alle Areas und ihre Entities"""
@@ -71,9 +75,12 @@ async def load_areas_and_entities():
         logger.info(f"Client initialized: {client.base_url}")
 
         # Create WebSocket connection for structure data
-        base_url = os.getenv('HA_URL')
-        token = os.getenv('HA_TOKEN')
-        ws_url = base_url.replace("https://", "wss://").replace("http://", "ws://") + "/api/websocket"
+        base_url = os.getenv("HA_URL")
+        token = os.getenv("HA_TOKEN")
+        ws_url = (
+            base_url.replace("https://", "wss://").replace("http://", "ws://")
+            + "/api/websocket"
+        )
 
         # Lade States
         logger.info("Loading states from Home Assistant...")
@@ -174,7 +181,11 @@ async def load_areas_and_entities():
                     if potential_device_name in device_entities:
                         device_id = device_entities[potential_device_name]
                         device = renamer_state["restructurer"].devices.get(device_id)
-                        if device and device.get("area_id") and device["area_id"] in areas_dict:
+                        if (
+                            device
+                            and device.get("area_id")
+                            and device["area_id"] in areas_dict
+                        ):
                             area_name = areas_dict[device["area_id"]]
                             break
 
@@ -183,8 +194,15 @@ async def load_areas_and_entities():
                 entity_lower = entity_id.lower()
                 for area_id, name in areas_dict.items():
                     # Normalize area names for comparison
-                    area_key = area_id.lower().replace("ü", "u").replace("ö", "o").replace("ä", "a")
-                    if f".{area_key}_" in entity_lower or entity_lower.startswith(f"{domain}.{area_key}_"):
+                    area_key = (
+                        area_id.lower()
+                        .replace("ü", "u")
+                        .replace("ö", "o")
+                        .replace("ä", "a")
+                    )
+                    if f".{area_key}_" in entity_lower or entity_lower.startswith(
+                        f"{domain}.{area_key}_"
+                    ):
                         area_name = name
                         break
 
@@ -192,14 +210,20 @@ async def load_areas_and_entities():
             if domain not in entities_by_area[area_name]["domains"]:
                 entities_by_area[area_name]["domains"][domain] = []
 
-            entities_by_area[area_name]["domains"][domain].append({
-                "entity_id": entity_id,
-                "friendly_name": state.get("attributes", {}).get("friendly_name", entity_id),
-                "state": state.get("state", "unknown")
-            })
+            entities_by_area[area_name]["domains"][domain].append(
+                {
+                    "entity_id": entity_id,
+                    "friendly_name": state.get("attributes", {}).get(
+                        "friendly_name", entity_id
+                    ),
+                    "state": state.get("state", "unknown"),
+                }
+            )
 
             # Count for debug
-            entities_by_area_count[area_name] = entities_by_area_count.get(area_name, 0) + 1
+            entities_by_area_count[area_name] = (
+                entities_by_area_count.get(area_name, 0) + 1
+            )
 
         # Debug Output
         logger.info("Entity distribution by area:")
@@ -210,19 +234,23 @@ async def load_areas_and_entities():
         renamer_state["areas"] = areas_dict
         renamer_state["entities_by_area"] = entities_by_area
 
-        logger.info(f"Organization complete: {len(entities_by_area)} areas with entities")
+        logger.info(
+            f"Organization complete: {len(entities_by_area)} areas with entities"
+        )
         return entities_by_area
 
     except Exception as e:
         logger.error(f"Error in load_areas_and_entities: {str(e)}", exc_info=True)
         raise
 
-@app.route('/')
+
+@app.route("/")
 def index():
     """Hauptseite"""
-    return render_template('index.html')
+    return render_template("index.html")
 
-@app.route('/api/areas')
+
+@app.route("/api/areas")
 def get_areas():
     """Gibt alle Areas mit ihren Domains zurück"""
     # Create new event loop for this request
@@ -232,6 +260,7 @@ def get_areas():
         return loop.run_until_complete(_get_areas_async())
     finally:
         loop.close()
+
 
 async def _get_areas_async():
     """Async implementation of get_areas"""
@@ -243,34 +272,44 @@ async def _get_areas_async():
 
         # Prepare data for frontend
         areas_data = []
-        
+
         # Create reverse mapping from name to ID
         area_name_to_id = {}
         for area_id, area in renamer_state.get("restructurer", {}).areas.items():
             area_name_to_id[area.get("name", "")] = area_id
-        
+
         for area_name, area_data in renamer_state["entities_by_area"].items():
             if area_data["domains"]:  # Nur Areas mit Entities
                 area_id = area_name_to_id.get(area_name, None)
-                
+
                 # Get override if available
                 area_override = None
                 override_name = area_name
                 if area_id:
-                    area_override = renamer_state["naming_overrides"].get_area_override(area_id)
+                    area_override = renamer_state["naming_overrides"].get_area_override(
+                        area_id
+                    )
                     if area_override:
                         override_name = area_override.get("name", area_name)
-                
-                areas_data.append({
-                    "name": area_name,
-                    "display_name": override_name,
-                    "area_id": area_id,
-                    "has_override": area_override is not None,
-                    "override_name": area_override.get("name") if area_override else None,
-                    "domains": sorted(list(area_data["domains"].keys())),
-                    "entity_count": sum(len(entities) for entities in area_data["domains"].values())
-                })
-                logger.debug(f"Area '{area_name}': {len(area_data['domains'])} domains, {sum(len(entities) for entities in area_data['domains'].values())} entities")
+
+                areas_data.append(
+                    {
+                        "name": area_name,
+                        "display_name": override_name,
+                        "area_id": area_id,
+                        "has_override": area_override is not None,
+                        "override_name": area_override.get("name")
+                        if area_override
+                        else None,
+                        "domains": sorted(list(area_data["domains"].keys())),
+                        "entity_count": sum(
+                            len(entities) for entities in area_data["domains"].values()
+                        ),
+                    }
+                )
+                logger.debug(
+                    f"Area '{area_name}': {len(area_data['domains'])} domains, {sum(len(entities) for entities in area_data['domains'].values())} entities"
+                )
 
         # Sortiere nach Name
         areas_data.sort(key=lambda x: x["name"])
@@ -281,7 +320,8 @@ async def _get_areas_async():
         logger.error(f"Error in get_areas: {str(e)}", exc_info=True)
         return jsonify({"error": str(e)}), 500
 
-@app.route('/api/preview', methods=['POST'])
+
+@app.route("/api/preview", methods=["POST"])
 def preview_changes():
     """Zeige Vorschau der Änderungen für ausgewählte Area/Domain"""
     # Create new event loop for this request
@@ -292,12 +332,13 @@ def preview_changes():
     finally:
         loop.close()
 
+
 async def _preview_changes_async():
     """Async implementation of preview_changes"""
     data = request.json
-    area_name = data.get('area')
-    domain = data.get('domain')
-    skip_reviewed = data.get('skip_reviewed', False)
+    area_name = data.get("area")
+    domain = data.get("domain")
+    skip_reviewed = data.get("skip_reviewed", False)
 
     if not area_name or not domain:
         return jsonify({"error": "Area und Domain müssen angegeben werden"}), 400
@@ -306,12 +347,19 @@ async def _preview_changes_async():
     if domain == "all":
         # Collect all entities from all domains for this area
         entities = []
-        domains_data = renamer_state["entities_by_area"].get(area_name, {}).get("domains", {})
+        domains_data = (
+            renamer_state["entities_by_area"].get(area_name, {}).get("domains", {})
+        )
         for domain_entities in domains_data.values():
             entities.extend(domain_entities)
     else:
-        entities = renamer_state["entities_by_area"].get(area_name, {}).get("domains", {}).get(domain, [])
-    
+        entities = (
+            renamer_state["entities_by_area"]
+            .get(area_name, {})
+            .get("domains", {})
+            .get(domain, [])
+        )
+
     if not entities:
         return jsonify({"changes": []})
 
@@ -322,19 +370,24 @@ async def _preview_changes_async():
     # Filtere die relevanten States
     filtered_states = []
     entity_ids = [e["entity_id"] for e in entities]
-    logger.info(f"Looking for {len(entity_ids)} entities from area {area_name}, domain {domain}")
+    logger.info(
+        f"Looking for {len(entity_ids)} entities from area {area_name}, domain {domain}"
+    )
     logger.debug(f"Entity IDs to find: {entity_ids}")
-    
+
     for state in all_states:
         if state["entity_id"] in entity_ids:
             filtered_states.append(state)
-    
+
     logger.info(f"Found {len(filtered_states)} states matching the entities")
 
     # Stelle sicher, dass der Restructurer die aktuelle Struktur hat
-    base_url = os.getenv('HA_URL')
-    token = os.getenv('HA_TOKEN')
-    ws_url = base_url.replace("https://", "wss://").replace("http://", "ws://") + "/api/websocket"
+    base_url = os.getenv("HA_URL")
+    token = os.getenv("HA_TOKEN")
+    ws_url = (
+        base_url.replace("https://", "wss://").replace("http://", "ws://")
+        + "/api/websocket"
+    )
 
     ws = HomeAssistantWebSocket(ws_url, token)
     await ws.connect()
@@ -345,11 +398,9 @@ async def _preview_changes_async():
 
         # Generiere Mapping
         mapping = await renamer_state["restructurer"].analyze_entities(
-            filtered_states,
-            skip_reviewed=skip_reviewed,
-            show_reviewed=False
+            filtered_states, skip_reviewed=skip_reviewed, show_reviewed=False
         )
-        
+
         logger.info(f"Generated mapping with {len(mapping)} entries")
 
         # Prepare changes for frontend - grouped by device
@@ -357,112 +408,150 @@ async def _preview_changes_async():
         entities_registry = renamer_state["restructurer"].entities
         devices_registry = renamer_state["restructurer"].devices
 
-        logger.info(f"Entities in registry: {len(entities_registry)}, Devices in registry: {len(devices_registry)}")
+        logger.info(
+            f"Entities in registry: {len(entities_registry)}, Devices in registry: {len(devices_registry)}"
+        )
 
         for old_id, (new_id, friendly_name) in mapping.items():
-                # Finde aktuelle Entity Info
-                current_info = next((e for e in entities if e["entity_id"] == old_id), {})
+            # Finde aktuelle Entity Info
+            current_info = next((e for e in entities if e["entity_id"] == old_id), {})
 
-                # Hole Device Info
-                entity_reg = entities_registry.get(old_id, {})
-                device_id = entity_reg.get("device_id")
-                device_info = None
+            # Hole Device Info
+            entity_reg = entities_registry.get(old_id, {})
+            device_id = entity_reg.get("device_id")
+            device_info = None
 
-                if old_id == "light.buro_bucherregal_indirekt_licht":
-                    logger.info(f"Debug {old_id}: entity_reg={bool(entity_reg)}, device_id={device_id}")
+            if old_id == "light.buro_bucherregal_indirekt_licht":
+                logger.info(
+                    f"Debug {old_id}: entity_reg={bool(entity_reg)}, device_id={device_id}"
+                )
 
-                if device_id and device_id in devices_registry:
-                    device = devices_registry[device_id]
-                    device_info = {
-                        "id": device_id,
-                        "name": device.get("name_by_user") or device.get("name", "Unbekanntes Gerät"),
-                        "manufacturer": device.get("manufacturer", ""),
-                        "model": device.get("model", ""),
-                        "area_id": device.get("area_id")
-                    }
-
-                # Get registry ID for entity
-                registry_id = entity_reg.get("id", "")  # The immutable UUID
-
-                # Hole Overrides
-                entity_override = renamer_state["naming_overrides"].get_entity_override(registry_id) if registry_id else None
-                device_override = renamer_state["naming_overrides"].get_device_override(device_id) if device_id else None
-
-                current_friendly_name = current_info.get("friendly_name", old_id)
-                entity_change = {
-                    "old_id": old_id,
-                    "new_id": new_id,
-                    "current_name": current_friendly_name,
-                    "new_name": friendly_name,
-                    "needs_rename": old_id != new_id or current_friendly_name != friendly_name,
-                    "selected": False,  # Not selected by default
-                    "device_id": device_id,
-                    "has_maintained_label": "maintained" in entity_reg.get("labels", []),
-                    "registry_id": registry_id,
-                    "has_override": entity_override is not None,
-                    "override_name": entity_override.get("name") if entity_override else None
+            if device_id and device_id in devices_registry:
+                device = devices_registry[device_id]
+                device_info = {
+                    "id": device_id,
+                    "name": device.get("name_by_user")
+                    or device.get("name", "Unbekanntes Gerät"),
+                    "manufacturer": device.get("manufacturer", ""),
+                    "model": device.get("model", ""),
+                    "area_id": device.get("area_id"),
                 }
 
-                # Gruppiere nach Device
-                device_key = device_id or "no_device"
-                if device_key not in devices_map:
-                    # Generiere Device Suggestion
-                    device_suggested_name = None
-                    if device_info:
-                        # Extrahiere aktuellen Device Namen ohne Raum
-                        current_device_name = device_info["name"]
+            # Get registry ID for entity
+            registry_id = entity_reg.get("id", "")  # The immutable UUID
 
-                        # Entferne Raumnamen vom Anfang des Device Names
-                        # Normalize for comparison
-                        area_normalized = area_name.lower()
-                        device_normalized = current_device_name.lower()
+            # Hole Overrides
+            entity_override = (
+                renamer_state["naming_overrides"].get_entity_override(registry_id)
+                if registry_id
+                else None
+            )
+            device_override = (
+                renamer_state["naming_overrides"].get_device_override(device_id)
+                if device_id
+                else None
+            )
 
-                        # Extrahiere Basis-Device-Namen ohne Raum
-                        base_device_name = current_device_name
-                        if device_normalized.startswith(area_normalized):
-                            # Entferne Raumnamen vom Anfang
-                            base_device_name = current_device_name[len(area_name):].strip()
+            current_friendly_name = current_info.get("friendly_name", old_id)
+            entity_change = {
+                "old_id": old_id,
+                "new_id": new_id,
+                "current_name": current_friendly_name,
+                "new_name": friendly_name,
+                "needs_rename": old_id != new_id
+                or current_friendly_name != friendly_name,
+                "selected": False,  # Not selected by default
+                "device_id": device_id,
+                "has_maintained_label": "maintained" in entity_reg.get("labels", []),
+                "registry_id": registry_id,
+                "has_override": entity_override is not None,
+                "override_name": entity_override.get("name")
+                if entity_override
+                else None,
+            }
 
-                        # Neuer Vorschlag: Aktueller Raum + Device Name (oder Override)
-                        if device_override:
-                            device_suggested_name = f"{area_name} {device_override['name']}"
-                        else:
-                            device_suggested_name = f"{area_name} {base_device_name}"
+            # Gruppiere nach Device
+            device_key = device_id or "no_device"
+            if device_key not in devices_map:
+                # Generiere Device Suggestion
+                device_suggested_name = None
+                if device_info:
+                    # Extrahiere aktuellen Device Namen ohne Raum
+                    current_device_name = device_info["name"]
 
-                    devices_map[device_key] = {
-                        "device_info": device_info,
-                        "device": {
-                            "id": device_id,
-                            "current_name": device_info["name"] if device_info else None,
-                            "suggested_name": device_suggested_name,
-                            "suggested_base_name": base_device_name if device_info else None,
-                            "has_override": device_override is not None,
-                            "override_name": device_override.get("name") if device_override else None,
-                            "needs_rename": device_info and device_info["name"] != device_suggested_name,
-                            "manufacturer": device_info.get("manufacturer", "") if device_info else None,
-                            "model": device_info.get("model", "") if device_info else None
-                        } if device_info else None,
-                        "entities": []
+                    # Entferne Raumnamen vom Anfang des Device Names
+                    # Normalize for comparison
+                    area_normalized = area_name.lower()
+                    device_normalized = current_device_name.lower()
+
+                    # Extrahiere Basis-Device-Namen ohne Raum
+                    base_device_name = current_device_name
+                    if device_normalized.startswith(area_normalized):
+                        # Entferne Raumnamen vom Anfang
+                        base_device_name = current_device_name[len(area_name) :].strip()
+
+                    # Neuer Vorschlag: Aktueller Raum + Device Name (oder Override)
+                    if device_override:
+                        device_suggested_name = f"{area_name} {device_override['name']}"
+                    else:
+                        device_suggested_name = f"{area_name} {base_device_name}"
+
+                devices_map[device_key] = {
+                    "device_info": device_info,
+                    "device": {
+                        "id": device_id,
+                        "current_name": device_info["name"] if device_info else None,
+                        "suggested_name": device_suggested_name,
+                        "suggested_base_name": base_device_name
+                        if device_info
+                        else None,
+                        "has_override": device_override is not None,
+                        "override_name": device_override.get("name")
+                        if device_override
+                        else None,
+                        "needs_rename": device_info
+                        and device_info["name"] != device_suggested_name,
+                        "manufacturer": device_info.get("manufacturer", "")
+                        if device_info
+                        else None,
+                        "model": device_info.get("model", "") if device_info else None,
                     }
-                devices_map[device_key]["entities"].append(entity_change)
-
+                    if device_info
+                    else None,
+                    "entities": [],
+                }
+            devices_map[device_key]["entities"].append(entity_change)
 
         # Convert to list for frontend
         changes = []
         for device_key, device_data in devices_map.items():
-            changes.append({
-                "device": device_data["device"],
-                "entities": sorted(device_data["entities"], key=lambda x: (not x["needs_rename"], x["old_id"]))
-            })
+            changes.append(
+                {
+                    "device": device_data["device"],
+                    "entities": sorted(
+                        device_data["entities"],
+                        key=lambda x: (not x["needs_rename"], x["old_id"]),
+                    ),
+                }
+            )
 
         # Sort devices: first with devices, then without
-        changes.sort(key=lambda x: (x["device"] is None, x["device"]["current_name"] if x["device"] else ""))
+        changes.sort(
+            key=lambda x: (
+                x["device"] is None,
+                x["device"]["current_name"] if x["device"] else "",
+            )
+        )
 
         # Debug logging
         logger.info(f"Preview for {area_name}/{domain}: {len(changes)} device groups")
         for i, change in enumerate(changes):
-            device_name = change["device"]["current_name"] if change["device"] else "No device"
-            logger.info(f"  Group {i}: {device_name} with {len(change['entities'])} entities")
+            device_name = (
+                change["device"]["current_name"] if change["device"] else "No device"
+            )
+            logger.info(
+                f"  Group {i}: {device_name} with {len(change['entities'])} entities"
+            )
 
         # Save for execute
         preview_id = f"{area_name}_{domain}"
@@ -470,24 +559,32 @@ async def _preview_changes_async():
             "area": area_name,
             "domain": domain,
             "changes": changes,
-            "mapping": mapping
+            "mapping": mapping,
         }
 
         # Berechne Statistiken
         total_entities = sum(len(device_group["entities"]) for device_group in changes)
-        need_rename = sum(1 for device_group in changes for entity in device_group["entities"] if entity["needs_rename"])
+        need_rename = sum(
+            1
+            for device_group in changes
+            for entity in device_group["entities"]
+            if entity["needs_rename"]
+        )
 
-        return jsonify({
-            "preview_id": preview_id,
-            "changes": changes,
-            "total": total_entities,
-            "need_rename": need_rename
-        })
+        return jsonify(
+            {
+                "preview_id": preview_id,
+                "changes": changes,
+                "total": total_entities,
+                "need_rename": need_rename,
+            }
+        )
 
     finally:
         await ws.disconnect()
 
-@app.route('/api/execute', methods=['POST'])
+
+@app.route("/api/execute", methods=["POST"])
 def execute_changes():
     """Führe ausgewählte Änderungen durch"""
     # Create new event loop for this request
@@ -498,12 +595,13 @@ def execute_changes():
     finally:
         loop.close()
 
+
 async def _execute_changes_async():
     """Async implementation of execute_changes"""
     data = request.json
-    preview_id = data.get('preview_id')
-    selected_entities = data.get('selected_entities', [])
-    selected_devices = data.get('selected_devices', [])
+    preview_id = data.get("preview_id")
+    selected_entities = data.get("selected_entities", [])
+    selected_devices = data.get("selected_devices", [])
 
     if not preview_id or preview_id not in renamer_state["proposed_changes"]:
         return jsonify({"error": "Ungültige Preview ID"}), 400
@@ -522,9 +620,12 @@ async def _execute_changes_async():
         return jsonify({"error": "Keine Entities oder Geräte ausgewählt"}), 400
 
     # Execute renaming
-    base_url = os.getenv('HA_URL')
-    token = os.getenv('HA_TOKEN')
-    ws_url = base_url.replace("https://", "wss://").replace("http://", "ws://") + "/api/websocket"
+    base_url = os.getenv("HA_URL")
+    token = os.getenv("HA_TOKEN")
+    ws_url = (
+        base_url.replace("https://", "wss://").replace("http://", "ws://")
+        + "/api/websocket"
+    )
 
     results = {
         "success": [],
@@ -532,7 +633,7 @@ async def _execute_changes_async():
         "skipped": [],
         "dependency_warnings": [],
         "device_success": [],
-        "device_failed": []
+        "device_failed": [],
     }
 
     ws = HomeAssistantWebSocket(ws_url, token)
@@ -543,100 +644,132 @@ async def _execute_changes_async():
         device_updater = DeviceRegistryUpdater(ws)
 
         # Dependency Updater nutzt REST API
-        base_url = os.getenv('HA_URL')
-        token = os.getenv('HA_TOKEN')
+        base_url = os.getenv("HA_URL")
+        token = os.getenv("HA_TOKEN")
         dependency_updater = DependencyUpdater(base_url, token)
-        
+
         # Get states for entity generation
         client = await init_client()
         states = await client.get_states()
 
         # Process devices first
         for device_data in selected_devices:
-            device_id = device_data['device_id']
-            new_device_name = device_data['new_name']
-            base_name = device_data.get('base_name', new_device_name)  # Fallback zum vollen Namen
-            device_entities = device_data['entities']
-            
+            device_id = device_data["device_id"]
+            new_device_name = device_data["new_name"]
+            base_name = device_data.get(
+                "base_name", new_device_name
+            )  # Fallback zum vollen Namen
+            device_entities = device_data["entities"]
+
             try:
                 # Benenne Device um
                 logger.info(f"Renaming device {device_id} to {new_device_name}")
                 success = await device_updater.rename_device(device_id, new_device_name)
-                
+
                 if success:
                     # Speichere Override mit Basisname
-                    renamer_state["naming_overrides"].set_device_override(device_id, base_name)
-                    
-                    results["device_success"].append({
-                        "device_id": device_id,
-                        "new_name": new_device_name,
-                        "message": f"Gerät erfolgreich umbenannt zu: {new_device_name}"
-                    })
-                    
+                    renamer_state["naming_overrides"].set_device_override(
+                        device_id, base_name
+                    )
+
+                    results["device_success"].append(
+                        {
+                            "device_id": device_id,
+                            "new_name": new_device_name,
+                            "message": f"Gerät erfolgreich umbenannt zu: {new_device_name}",
+                        }
+                    )
+
                     # Rename all associated entities
                     # Generiere neue Namen basierend auf dem neuen Device Namen
                     await renamer_state["restructurer"].load_structure(ws)
-                    
+
                     for entity_id in device_entities:
                         # Hole Entity Info aus states
-                        entity_state = next((s for s in states if s["entity_id"] == entity_id), None)
+                        entity_state = next(
+                            (s for s in states if s["entity_id"] == entity_id), None
+                        )
                         if entity_state:
                             # Generiere neuen Namen basierend auf aktuellem Device Namen
-                            new_entity_id, new_friendly_name = renamer_state["restructurer"].generate_new_entity_id(
-                                entity_id, entity_state
-                            )
-                        
+                            new_entity_id, new_friendly_name = renamer_state[
+                                "restructurer"
+                            ].generate_new_entity_id(entity_id, entity_state)
+
                         if entity_id != new_entity_id:
                             try:
-                                await entity_registry.rename_entity(entity_id, new_entity_id, new_friendly_name)
-                                await entity_registry.add_labels(new_entity_id, ["maintained"])
-                                
+                                await entity_registry.rename_entity(
+                                    entity_id, new_entity_id, new_friendly_name
+                                )
+                                await entity_registry.add_labels(
+                                    new_entity_id, ["maintained"]
+                                )
+
                                 # Update dependencies
-                                dep_results = await dependency_updater.update_all_dependencies(entity_id, new_entity_id)
-                                
-                                results["success"].append({
-                                    "old_id": entity_id,
-                                    "new_id": new_entity_id,
-                                    "message": f"Entity erfolgreich umbenannt (durch Gerät)"
-                                })
-                                
+                                dep_results = (
+                                    await dependency_updater.update_all_dependencies(
+                                        entity_id, new_entity_id
+                                    )
+                                )
+
+                                results["success"].append(
+                                    {
+                                        "old_id": entity_id,
+                                        "new_id": new_entity_id,
+                                        "message": f"Entity erfolgreich umbenannt (durch Gerät)",
+                                    }
+                                )
+
                             except Exception as e:
-                                logger.error(f"Fehler beim Umbenennen der Entity {entity_id}: {e}")
-                                results["failed"].append({
-                                    "entity_id": entity_id,
-                                    "error": str(e)
-                                })
+                                logger.error(
+                                    f"Fehler beim Umbenennen der Entity {entity_id}: {e}"
+                                )
+                                results["failed"].append(
+                                    {"entity_id": entity_id, "error": str(e)}
+                                )
                 else:
-                    results["device_failed"].append({
-                        "device_id": device_id,
-                        "error": "Fehler beim Umbenennen des Geräts in Home Assistant"
-                    })
-                    
+                    results["device_failed"].append(
+                        {
+                            "device_id": device_id,
+                            "error": "Fehler beim Umbenennen des Geräts in Home Assistant",
+                        }
+                    )
+
             except Exception as e:
                 logger.error(f"Fehler beim Device {device_id}: {e}")
-                results["device_failed"].append({
-                    "device_id": device_id,
-                    "error": str(e)
-                })
+                results["device_failed"].append(
+                    {"device_id": device_id, "error": str(e)}
+                )
 
         # Verarbeite einzelne Entities
         for old_id, (new_id, friendly_name) in selected_mapping.items():
             try:
-                logger.info(f"Processing entity: {old_id} -> {new_id}, friendly_name: {friendly_name}")
-                
+                logger.info(
+                    f"Processing entity: {old_id} -> {new_id}, friendly_name: {friendly_name}"
+                )
+
                 # Check if entity ID or friendly name needs to be changed
-                entity_registry_entry = renamer_state["restructurer"].entities.get(old_id, {})
-                current_states = next((s for s in states if s["entity_id"] == old_id), {})
-                current_friendly_name = current_states.get("attributes", {}).get("friendly_name", "")
-                
+                entity_registry_entry = renamer_state["restructurer"].entities.get(
+                    old_id, {}
+                )
+                current_states = next(
+                    (s for s in states if s["entity_id"] == old_id), {}
+                )
+                current_friendly_name = current_states.get("attributes", {}).get(
+                    "friendly_name", ""
+                )
+
                 needs_id_change = old_id != new_id
                 needs_friendly_name_change = current_friendly_name != friendly_name
-                
+
                 if needs_id_change or needs_friendly_name_change:
                     # Umbenennen (Entity ID und/oder Friendly Name)
-                    logger.info(f"Updating entity: ID change={needs_id_change}, Name change={needs_friendly_name_change}")
+                    logger.info(
+                        f"Updating entity: ID change={needs_id_change}, Name change={needs_friendly_name_change}"
+                    )
                     if needs_id_change:
-                        await entity_registry.rename_entity(old_id, new_id, friendly_name)
+                        await entity_registry.rename_entity(
+                            old_id, new_id, friendly_name
+                        )
                         # Label setzen
                         await entity_registry.add_labels(new_id, ["maintained"])
                     else:
@@ -648,14 +781,20 @@ async def _execute_changes_async():
                     # Update dependencies only on ID change
                     if needs_id_change:
                         try:
-                            logger.info(f"Updating dependencies for: {old_id} -> {new_id}")
-                            dep_results = await dependency_updater.update_all_dependencies(old_id, new_id)
+                            logger.info(
+                                f"Updating dependencies for: {old_id} -> {new_id}"
+                            )
+                            dep_results = (
+                                await dependency_updater.update_all_dependencies(
+                                    old_id, new_id
+                                )
+                            )
 
                             # Erstelle Success Entry
                             success_entry = {
                                 "old_id": old_id,
                                 "new_id": new_id,
-                                "message": f"Erfolgreich umbenannt"
+                                "message": f"Erfolgreich umbenannt",
                             }
 
                             # Add dependency updates if available
@@ -663,8 +802,10 @@ async def _execute_changes_async():
                                 success_entry["dependency_updates"] = {
                                     "scenes": len(dep_results["scenes"]["success"]),
                                     "scripts": len(dep_results["scripts"]["success"]),
-                                    "automations": len(dep_results["automations"]["success"]),
-                                    "total": dep_results["total_success"]
+                                    "automations": len(
+                                        dep_results["automations"]["success"]
+                                    ),
+                                    "total": dep_results["total_success"],
                                 }
 
                             results["success"].append(success_entry)
@@ -674,39 +815,49 @@ async def _execute_changes_async():
                                 failed_items = []
                                 failed_items.extend(dep_results["scenes"]["failed"])
                                 failed_items.extend(dep_results["scripts"]["failed"])
-                                failed_items.extend(dep_results["automations"]["failed"])
+                                failed_items.extend(
+                                    dep_results["automations"]["failed"]
+                                )
 
-                                results["dependency_warnings"].append({
-                                    "entity_id": new_id,
-                                    "warning": f"Einige Dependencies konnten nicht aktualisiert werden: {', '.join(failed_items)}"
-                                })
+                                results["dependency_warnings"].append(
+                                    {
+                                        "entity_id": new_id,
+                                        "warning": f"Einige Dependencies konnten nicht aktualisiert werden: {', '.join(failed_items)}",
+                                    }
+                                )
 
                         except Exception as e:
-                            logger.error(f"Fehler beim Update der Dependencies: {e}", exc_info=True)
-                            results["dependency_warnings"].append({
-                                "entity_id": new_id,
-                                "warning": f"Dependencies konnten nicht automatisch aktualisiert werden: {str(e)}"
-                            })
+                            logger.error(
+                                f"Fehler beim Update der Dependencies: {e}",
+                                exc_info=True,
+                            )
+                            results["dependency_warnings"].append(
+                                {
+                                    "entity_id": new_id,
+                                    "warning": f"Dependencies konnten nicht automatisch aktualisiert werden: {str(e)}",
+                                }
+                            )
                     else:
                         # Only friendly name changed
-                        results["success"].append({
-                            "old_id": old_id,
-                            "new_id": old_id,  # ID bleibt gleich
-                            "message": f"Friendly Name aktualisiert zu: {friendly_name}"
-                        })
+                        results["success"].append(
+                            {
+                                "old_id": old_id,
+                                "new_id": old_id,  # ID bleibt gleich
+                                "message": f"Friendly Name aktualisiert zu: {friendly_name}",
+                            }
+                        )
                 else:
                     # Nur Label setzen
                     await entity_registry.add_labels(old_id, ["maintained"])
-                    results["skipped"].append({
-                        "entity_id": old_id,
-                        "message": "Bereits korrekt benannt, Label gesetzt"
-                    })
+                    results["skipped"].append(
+                        {
+                            "entity_id": old_id,
+                            "message": "Bereits korrekt benannt, Label gesetzt",
+                        }
+                    )
 
             except Exception as e:
-                results["failed"].append({
-                    "entity_id": old_id,
-                    "error": str(e)
-                })
+                results["failed"].append({"entity_id": old_id, "error": str(e)})
 
     finally:
         await ws.disconnect()
@@ -716,7 +867,8 @@ async def _execute_changes_async():
 
     return jsonify(results)
 
-@app.route('/api/stats')
+
+@app.route("/api/stats")
 def get_stats():
     """Hole Statistiken über alle Entities"""
     # Create new event loop for this request
@@ -727,6 +879,7 @@ def get_stats():
     finally:
         loop.close()
 
+
 async def _get_stats_async():
     """Async implementation of get_stats"""
     client = await init_client()
@@ -735,7 +888,7 @@ async def _get_stats_async():
     stats = {
         "total_entities": len(states),
         "domains": {},
-        "areas": len(renamer_state.get("areas", {}))
+        "areas": len(renamer_state.get("areas", {})),
     }
 
     for state in states:
@@ -744,7 +897,8 @@ async def _get_stats_async():
 
     return jsonify(stats)
 
-@app.route('/api/dependencies/<entity_id>')
+
+@app.route("/api/dependencies/<entity_id>")
 def get_dependencies(entity_id):
     """Hole Dependencies für eine Entity"""
     # Create new event loop for this request
@@ -754,6 +908,7 @@ def get_dependencies(entity_id):
         return loop.run_until_complete(_get_dependencies_async(entity_id))
     finally:
         loop.close()
+
 
 async def _get_dependencies_async(entity_id):
     """Async implementation of get_dependencies"""
@@ -794,6 +949,7 @@ async def _get_dependencies_async(entity_id):
             if state["entity_id"].startswith("script."):
                 # Check if entity is used in the script
                 import json
+
                 state_str = json.dumps(state.get("attributes", {}))
                 if entity_id in state_str:
                     script_refs.append(state["entity_id"])
@@ -804,39 +960,50 @@ async def _get_dependencies_async(entity_id):
         # Suche in Automations
         automation_refs = []
         logger.info(f"Suche Automations die {entity_id} verwenden...")
-        
+
         # Filtere alle Automation States
-        automation_states = [s for s in states if s["entity_id"].startswith("automation.")]
+        automation_states = [
+            s for s in states if s["entity_id"].startswith("automation.")
+        ]
         logger.info(f"Gefunden: {len(automation_states)} Automations")
-        
+
         # Check each automation
         for i, automation_state in enumerate(automation_states):
             automation_entity_id = automation_state["entity_id"]
-            automation_name = automation_state.get("attributes", {}).get("friendly_name", automation_entity_id)
-            
-            logger.debug(f"Prüfe Automation {i+1}/{len(automation_states)}: {automation_name}")
-            
+            automation_name = automation_state.get("attributes", {}).get(
+                "friendly_name", automation_entity_id
+            )
+
+            logger.debug(
+                f"Prüfe Automation {i+1}/{len(automation_states)}: {automation_name}"
+            )
+
             # Check the automation attributes
             attributes = automation_state.get("attributes", {})
-            
+
             # Log die ersten paar Automations komplett
             if i < 3:
-                logger.debug(f"Automation {automation_name} attributes keys: {list(attributes.keys())}")
-            
+                logger.debug(
+                    f"Automation {automation_name} attributes keys: {list(attributes.keys())}"
+                )
+
             # Suche in den gesamten Attributes (inkl. last_triggered, etc.)
             import json
+
             attributes_str = json.dumps(attributes)
-            
+
             # Log wenn "Diele" im Namen ist
             if "diele" in automation_name.lower():
                 logger.info(f"Automation mit 'Diele' im Namen: {automation_name}")
                 logger.debug(f"Attributes (erste 500 Zeichen): {attributes_str[:500]}")
-            
+
             # Check if the entity is mentioned in the attributes
             if entity_id in attributes_str:
-                logger.info(f"Entity {entity_id} gefunden in Automation: {automation_name}")
+                logger.info(
+                    f"Entity {entity_id} gefunden in Automation: {automation_name}"
+                )
                 automation_refs.append(automation_entity_id)
-            
+
             # Special handling for blueprint-based automations
             # Diese haben oft ihre Entity-Referenzen in den "variables" oder "use_blueprint" Feldern
             if "use_blueprint" in attributes:
@@ -844,7 +1011,9 @@ async def _get_dependencies_async(entity_id):
                 blueprint_str = json.dumps(blueprint_data)
                 logger.debug(f"Blueprint-Automation gefunden: {automation_name}")
                 if entity_id in blueprint_str:
-                    logger.info(f"Entity {entity_id} gefunden in Blueprint-Automation: {automation_name}")
+                    logger.info(
+                        f"Entity {entity_id} gefunden in Blueprint-Automation: {automation_name}"
+                    )
                     if automation_entity_id not in automation_refs:
                         automation_refs.append(automation_entity_id)
 
@@ -852,41 +1021,57 @@ async def _get_dependencies_async(entity_id):
         if not automation_refs:
             logger.info("Versuche Automation-Konfigurationen über REST API zu laden...")
             try:
-                base_url = os.getenv('HA_URL')
-                token = os.getenv('HA_TOKEN')
+                base_url = os.getenv("HA_URL")
+                token = os.getenv("HA_TOKEN")
                 headers = {
                     "Authorization": f"Bearer {token}",
-                    "Content-Type": "application/json"
+                    "Content-Type": "application/json",
                 }
-                
+
                 # Gehe durch alle gefundenen Automations und hole ihre Configs
                 for automation_state in automation_states:
                     automation_id = automation_state.get("attributes", {}).get("id")
-                    automation_name = automation_state.get("attributes", {}).get("friendly_name", automation_state["entity_id"])
-                    
+                    automation_name = automation_state.get("attributes", {}).get(
+                        "friendly_name", automation_state["entity_id"]
+                    )
+
                     if automation_id:
                         # Get the automation config via REST API
-                        config_url = f"{base_url}/api/config/automation/config/{automation_id}"
-                        
+                        config_url = (
+                            f"{base_url}/api/config/automation/config/{automation_id}"
+                        )
+
                         async with aiohttp.ClientSession() as session:
-                            async with session.get(config_url, headers=headers) as response:
+                            async with session.get(
+                                config_url, headers=headers
+                            ) as response:
                                 if response.status == 200:
                                     config = await response.json()
                                     config_str = json.dumps(config)
-                                    
+
                                     # Debug for Diele automation
                                     if "diele" in automation_name.lower():
-                                        logger.debug(f"Config für {automation_name}: {config_str[:500]}...")
-                                    
+                                        logger.debug(
+                                            f"Config für {automation_name}: {config_str[:500]}..."
+                                        )
+
                                     if entity_id in config_str:
-                                        logger.info(f"Entity {entity_id} gefunden in Automation: {automation_name}")
-                                        automation_refs.append(automation_state["entity_id"])
+                                        logger.info(
+                                            f"Entity {entity_id} gefunden in Automation: {automation_name}"
+                                        )
+                                        automation_refs.append(
+                                            automation_state["entity_id"]
+                                        )
                                 else:
-                                    logger.warning(f"Fehler beim Abrufen der Config für {automation_name}: {response.status}")
-                    
+                                    logger.warning(
+                                        f"Fehler beim Abrufen der Config für {automation_name}: {response.status}"
+                                    )
+
             except Exception as e:
-                logger.error(f"Fehler beim Laden der Automation-Configs über REST API: {e}")
-        
+                logger.error(
+                    f"Fehler beim Laden der Automation-Configs über REST API: {e}"
+                )
+
         if automation_refs:
             dependencies["Automations"] = automation_refs
         else:
@@ -898,7 +1083,8 @@ async def _get_dependencies_async(entity_id):
 
     return jsonify(dependencies)
 
-@app.route('/api/rename_device', methods=['POST'])
+
+@app.route("/api/rename_device", methods=["POST"])
 def rename_device():
     """Benennt ein Gerät um"""
     # Create new event loop for this request
@@ -909,18 +1095,25 @@ def rename_device():
     finally:
         loop.close()
 
+
 async def _rename_device_async():
     """Async implementation of rename_device"""
     data = request.json
-    device_id = data.get('device_id')
-    new_name = data.get('new_name')
+    device_id = data.get("device_id")
+    new_name = data.get("new_name")
 
     if not device_id or not new_name:
-        return jsonify({"error": "Device ID und neuer Name müssen angegeben werden"}), 400
+        return (
+            jsonify({"error": "Device ID und neuer Name müssen angegeben werden"}),
+            400,
+        )
 
-    base_url = os.getenv('HA_URL')
-    token = os.getenv('HA_TOKEN')
-    ws_url = base_url.replace("https://", "wss://").replace("http://", "ws://") + "/api/websocket"
+    base_url = os.getenv("HA_URL")
+    token = os.getenv("HA_TOKEN")
+    ws_url = (
+        base_url.replace("https://", "wss://").replace("http://", "ws://")
+        + "/api/websocket"
+    )
 
     ws = HomeAssistantWebSocket(ws_url, token)
     await ws.connect()
@@ -941,7 +1134,8 @@ async def _rename_device_async():
     finally:
         await ws.disconnect()
 
-@app.route('/api/update_mapping', methods=['POST'])
+
+@app.route("/api/update_mapping", methods=["POST"])
 def update_mapping():
     """Aktualisiert das Mapping für eine einzelne Entity"""
     # Create new event loop for this request
@@ -952,16 +1146,22 @@ def update_mapping():
     finally:
         loop.close()
 
+
 async def _update_mapping_async():
     """Async implementation of update_mapping"""
     data = request.json
-    preview_id = data.get('preview_id')
-    old_id = data.get('old_id')
-    new_id = data.get('new_id')
-    new_name = data.get('new_name')
+    preview_id = data.get("preview_id")
+    old_id = data.get("old_id")
+    new_id = data.get("new_id")
+    new_name = data.get("new_name")
 
     if not preview_id or not old_id or not new_id:
-        return jsonify({"error": "Preview ID, alte und neue Entity ID müssen angegeben werden"}), 400
+        return (
+            jsonify(
+                {"error": "Preview ID, alte und neue Entity ID müssen angegeben werden"}
+            ),
+            400,
+        )
 
     # Hole das gespeicherte Mapping
     if preview_id not in renamer_state["proposed_changes"]:
@@ -986,7 +1186,8 @@ async def _update_mapping_async():
     else:
         return jsonify({"error": "Entity nicht im Mapping gefunden"}), 404
 
-@app.route('/api/set_entity_override', methods=['POST'])
+
+@app.route("/api/set_entity_override", methods=["POST"])
 def set_entity_override():
     """Setze Entity Name Override"""
     # Create new event loop for this request
@@ -997,11 +1198,12 @@ def set_entity_override():
     finally:
         loop.close()
 
+
 async def _set_entity_override_async():
     """Async implementation of set_entity_override"""
     data = request.json
-    registry_id = data.get('registry_id')
-    override_name = data.get('override_name')
+    registry_id = data.get("registry_id")
+    override_name = data.get("override_name")
 
     if not registry_id:
         return jsonify({"error": "Registry ID muss angegeben werden"}), 400
@@ -1009,41 +1211,48 @@ async def _set_entity_override_async():
     try:
         # Speichere Override
         if override_name:
-            renamer_state["naming_overrides"].set_entity_override(registry_id, override_name)
+            renamer_state["naming_overrides"].set_entity_override(
+                registry_id, override_name
+            )
         else:
             renamer_state["naming_overrides"].remove_entity_override(registry_id)
-        
+
         # Finde die Entity ID basierend auf der Registry ID
         entity_id = None
         for eid, entity in renamer_state["restructurer"].entities.items():
             if entity.get("id") == registry_id:
                 entity_id = eid
                 break
-        
+
         if entity_id and override_name:
             # Berechne den neuen Friendly Name basierend auf dem Override
             # We need to use the restructurer's structure
-            new_id, new_friendly_name = renamer_state["restructurer"].generate_new_entity_id(
-                entity_id, 
-                {"entity_id": entity_id, "attributes": {}}
+            new_id, new_friendly_name = renamer_state[
+                "restructurer"
+            ].generate_new_entity_id(
+                entity_id, {"entity_id": entity_id, "attributes": {}}
             )
-            
+
             # Aktualisiere den Friendly Name in Home Assistant
-            base_url = os.getenv('HA_URL')
-            token = os.getenv('HA_TOKEN')
-            ws_url = base_url.replace("https://", "wss://").replace("http://", "ws://") + "/api/websocket"
-            
+            base_url = os.getenv("HA_URL")
+            token = os.getenv("HA_TOKEN")
+            ws_url = (
+                base_url.replace("https://", "wss://").replace("http://", "ws://")
+                + "/api/websocket"
+            )
+
             ws = HomeAssistantWebSocket(ws_url, token)
             await ws.connect()
-            
+
             try:
                 entity_registry = EntityRegistry(ws)
                 # Update nur den Friendly Name, nicht die Entity ID
                 await entity_registry.update_entity(
-                    entity_id=entity_id,
-                    name=new_friendly_name
+                    entity_id=entity_id, name=new_friendly_name
                 )
-                logger.info(f"Entity {entity_id} Friendly Name aktualisiert zu: {new_friendly_name}")
+                logger.info(
+                    f"Entity {entity_id} Friendly Name aktualisiert zu: {new_friendly_name}"
+                )
             finally:
                 await ws.disconnect()
 
@@ -1052,7 +1261,8 @@ async def _set_entity_override_async():
         logger.error(f"Fehler beim Setzen des Entity Override: {e}")
         return jsonify({"error": str(e)}), 500
 
-@app.route('/api/set_device_override', methods=['POST'])
+
+@app.route("/api/set_device_override", methods=["POST"])
 def set_device_override():
     """Setze Device Name Override"""
     # Create new event loop for this request
@@ -1063,18 +1273,21 @@ def set_device_override():
     finally:
         loop.close()
 
+
 async def _set_device_override_async():
     """Async implementation of set_device_override"""
     data = request.json
-    device_id = data.get('device_id')
-    override_name = data.get('override_name')
+    device_id = data.get("device_id")
+    override_name = data.get("override_name")
 
     if not device_id:
         return jsonify({"error": "Device ID muss angegeben werden"}), 400
 
     try:
         if override_name:
-            renamer_state["naming_overrides"].set_device_override(device_id, override_name)
+            renamer_state["naming_overrides"].set_device_override(
+                device_id, override_name
+            )
         else:
             renamer_state["naming_overrides"].remove_device_override(device_id)
 
@@ -1083,7 +1296,8 @@ async def _set_device_override_async():
         logger.error(f"Fehler beim Setzen des Device Override: {e}")
         return jsonify({"error": str(e)}), 500
 
-@app.route('/api/set_area_override', methods=['POST'])
+
+@app.route("/api/set_area_override", methods=["POST"])
 def set_area_override():
     """Setze Area Name Override"""
     # Create new event loop for this request
@@ -1094,11 +1308,12 @@ def set_area_override():
     finally:
         loop.close()
 
+
 async def _set_area_override_async():
     """Async implementation of set_area_override"""
     data = request.json
-    area_id = data.get('area_id')
-    override_name = data.get('override_name')
+    area_id = data.get("area_id")
+    override_name = data.get("override_name")
 
     if not area_id:
         return jsonify({"error": "Area ID muss angegeben werden"}), 400
@@ -1114,7 +1329,8 @@ async def _set_area_override_async():
         logger.error(f"Fehler beim Setzen des Area Override: {e}")
         return jsonify({"error": str(e)}), 500
 
-@app.route('/api/rename_device_in_ha', methods=['POST'])
+
+@app.route("/api/rename_device_in_ha", methods=["POST"])
 def rename_device_in_ha():
     """Benennt ein Gerät tatsächlich in Home Assistant um"""
     # Create new event loop for this request
@@ -1125,50 +1341,70 @@ def rename_device_in_ha():
     finally:
         loop.close()
 
+
 async def _rename_device_in_ha_async():
     """Async implementation of rename_device_in_ha"""
     data = request.json
-    device_id = data.get('device_id')
-    new_name = data.get('new_name')
+    device_id = data.get("device_id")
+    new_name = data.get("new_name")
 
     if not device_id or not new_name:
-        return jsonify({"error": "Device ID und neuer Name müssen angegeben werden"}), 400
+        return (
+            jsonify({"error": "Device ID und neuer Name müssen angegeben werden"}),
+            400,
+        )
 
     try:
         # Erstelle WebSocket Verbindung
-        base_url = os.getenv('HA_URL')
-        token = os.getenv('HA_TOKEN')
-        ws_url = base_url.replace("https://", "wss://").replace("http://", "ws://") + "/api/websocket"
-        
+        base_url = os.getenv("HA_URL")
+        token = os.getenv("HA_TOKEN")
+        ws_url = (
+            base_url.replace("https://", "wss://").replace("http://", "ws://")
+            + "/api/websocket"
+        )
+
         ws = HomeAssistantWebSocket(ws_url, token)
         await ws.connect()
-        
+
         try:
             device_updater = DeviceRegistryUpdater(ws)
             success = await device_updater.rename_device(device_id, new_name)
-            
+
             if success:
                 # Speichere auch als Override
-                renamer_state["naming_overrides"].set_device_override(device_id, new_name)
-                return jsonify({"success": True, "message": f"Gerät erfolgreich umbenannt zu: {new_name}"})
+                renamer_state["naming_overrides"].set_device_override(
+                    device_id, new_name
+                )
+                return jsonify(
+                    {
+                        "success": True,
+                        "message": f"Gerät erfolgreich umbenannt zu: {new_name}",
+                    }
+                )
             else:
-                return jsonify({"error": "Fehler beim Umbenennen des Geräts in Home Assistant"}), 500
-                
+                return (
+                    jsonify(
+                        {"error": "Fehler beim Umbenennen des Geräts in Home Assistant"}
+                    ),
+                    500,
+                )
+
         finally:
             await ws.disconnect()
-            
+
     except Exception as e:
         logger.error(f"Fehler beim Umbenennen des Geräts: {e}")
         return jsonify({"error": str(e)}), 500
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     # Erstelle Template-Verzeichnis
-    os.makedirs('templates', exist_ok=True)
+    os.makedirs("templates", exist_ok=True)
 
     # In Add-on mode, use port 5000 for Ingress
-    port = int(os.getenv('WEB_UI_PORT', 5000))
+    port = int(os.getenv("WEB_UI_PORT", 5000))
     print(f"\n⚠️  ALPHA VERSION - Entity Manager Add-on")
     print(f"\n🚀 Starting Web UI on port {port}\n")
-    
+
     # Run without debug in production
-    app.run(debug=False, host='0.0.0.0', port=port)
+    app.run(debug=False, host="0.0.0.0", port=port)

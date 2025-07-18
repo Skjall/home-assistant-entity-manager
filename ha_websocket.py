@@ -15,43 +15,44 @@ class HomeAssistantWebSocket:
         self.websocket: Optional[WebSocketClientProtocol] = None
         self.message_id = 1
         self.pending_messages: Dict[int, asyncio.Future] = {}
-        
+
     async def connect(self):
         # Erhöhe das max_size Limit auf 10MB für große Entity Registries
         self.websocket = await websockets.connect(
-            self.url,
-            max_size=10 * 1024 * 1024  # 10MB statt default 1MB
+            self.url, max_size=10 * 1024 * 1024  # 10MB statt default 1MB
         )
-        
+
         auth_msg = await self._receive_message()
         if auth_msg["type"] != "auth_required":
             raise Exception(f"Unexpected message type: {auth_msg['type']}")
-            
+
         await self._send_message({"type": "auth", "access_token": self.token})
-        
+
         auth_result = await self._receive_message()
         if auth_result["type"] != "auth_ok":
             raise Exception(f"Authentication failed: {auth_result}")
-            
+
         logger.info("Successfully connected to Home Assistant WebSocket")
-        
+
     async def disconnect(self):
         if self.websocket:
             await self.websocket.close()
-            
+
     async def _send_message(self, message: Dict[str, Any]) -> int:
         if "id" not in message and message["type"] != "auth":
             message["id"] = self.message_id
             self.message_id += 1
-            
+
         await self.websocket.send(json.dumps(message))
         return message.get("id", 0)
-        
+
     async def _receive_message(self) -> Dict[str, Any]:
         message = await self.websocket.recv()
         return json.loads(message)
-        
-    async def call_service(self, domain: str, service: str, data: Optional[Dict] = None) -> Dict[str, Any]:
+
+    async def call_service(
+        self, domain: str, service: str, data: Optional[Dict] = None
+    ) -> Dict[str, Any]:
         message = {
             "type": "call_service",
             "domain": domain,
@@ -59,68 +60,66 @@ class HomeAssistantWebSocket:
         }
         if data:
             message["service_data"] = data
-            
+
         msg_id = await self._send_message(message)
-        
+
         response = await self._receive_message()
         while response.get("id") != msg_id:
             response = await self._receive_message()
-            
+
         if not response.get("success"):
             raise Exception(f"Service call failed: {response}")
-            
+
         return response.get("result", {})
-        
+
     async def get_states(self) -> list:
         msg_id = await self._send_message({"type": "get_states"})
-        
+
         response = await self._receive_message()
         while response.get("id") != msg_id:
             response = await self._receive_message()
-            
+
         if not response.get("success"):
             raise Exception(f"Failed to get states: {response}")
-            
+
         return response.get("result", [])
-        
+
     async def get_config(self) -> Dict[str, Any]:
         msg_id = await self._send_message({"type": "get_config"})
-        
+
         response = await self._receive_message()
         while response.get("id") != msg_id:
             response = await self._receive_message()
-            
+
         if not response.get("success"):
             raise Exception(f"Failed to get config: {response}")
-            
+
         return response.get("result", {})
-        
+
     async def subscribe_events(self, event_type: str, callback: Callable) -> int:
-        msg_id = await self._send_message({
-            "type": "subscribe_events",
-            "event_type": event_type
-        })
-        
+        msg_id = await self._send_message(
+            {"type": "subscribe_events", "event_type": event_type}
+        )
+
         response = await self._receive_message()
         while response.get("id") != msg_id:
             response = await self._receive_message()
-            
+
         if not response.get("success"):
             raise Exception(f"Failed to subscribe to events: {response}")
-            
+
         return msg_id
-        
+
     async def get_entity_registry_entry(self, entity_id: str) -> Dict[str, Any]:
-        msg_id = await self._send_message({
-            "type": "config/entity_registry/get",
-            "entity_id": entity_id
-        })
-        
+        msg_id = await self._send_message(
+            {"type": "config/entity_registry/get", "entity_id": entity_id}
+        )
+
         response = await self._receive_message()
         while response.get("id") != msg_id:
             response = await self._receive_message()
-            
+
         if not response.get("success"):
             raise Exception(f"Failed to get entity registry entry: {response}")
-            
+
         return response.get("result", {})
