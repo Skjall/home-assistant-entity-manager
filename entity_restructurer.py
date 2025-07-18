@@ -3,7 +3,7 @@
 Home Assistant Entity Restructurer
 Erstellt komplett neue Entity IDs basierend auf der tatsächlichen Struktur:
 - Raum (Area)
-- Gerät (Device) 
+- Gerät (Device)
 - Entität (Was es ist)
 """
 import logging

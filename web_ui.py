@@ -298,9 +298,9 @@ async def _get_areas_async():
                         "display_name": override_name,
                         "area_id": area_id,
                         "has_override": area_override is not None,
-                        "override_name": area_override.get("name")
-                        if area_override
-                        else None,
+                        "override_name": (
+                            area_override.get("name") if area_override else None
+                        ),
                         "domains": sorted(list(area_data["domains"].keys())),
                         "entity_count": sum(
                             len(entities) for entities in area_data["domains"].values()
@@ -465,9 +465,9 @@ async def _preview_changes_async():
                 "has_maintained_label": "maintained" in entity_reg.get("labels", []),
                 "registry_id": registry_id,
                 "has_override": entity_override is not None,
-                "override_name": entity_override.get("name")
-                if entity_override
-                else None,
+                "override_name": (
+                    entity_override.get("name") if entity_override else None
+                ),
             }
 
             # Gruppiere nach Device
@@ -498,26 +498,34 @@ async def _preview_changes_async():
 
                 devices_map[device_key] = {
                     "device_info": device_info,
-                    "device": {
-                        "id": device_id,
-                        "current_name": device_info["name"] if device_info else None,
-                        "suggested_name": device_suggested_name,
-                        "suggested_base_name": base_device_name
+                    "device": (
+                        {
+                            "id": device_id,
+                            "current_name": (
+                                device_info["name"] if device_info else None
+                            ),
+                            "suggested_name": device_suggested_name,
+                            "suggested_base_name": (
+                                base_device_name if device_info else None
+                            ),
+                            "has_override": device_override is not None,
+                            "override_name": (
+                                device_override.get("name") if device_override else None
+                            ),
+                            "needs_rename": device_info
+                            and device_info["name"] != device_suggested_name,
+                            "manufacturer": (
+                                device_info.get("manufacturer", "")
+                                if device_info
+                                else None
+                            ),
+                            "model": (
+                                device_info.get("model", "") if device_info else None
+                            ),
+                        }
                         if device_info
-                        else None,
-                        "has_override": device_override is not None,
-                        "override_name": device_override.get("name")
-                        if device_override
-                        else None,
-                        "needs_rename": device_info
-                        and device_info["name"] != device_suggested_name,
-                        "manufacturer": device_info.get("manufacturer", "")
-                        if device_info
-                        else None,
-                        "model": device_info.get("model", "") if device_info else None,
-                    }
-                    if device_info
-                    else None,
+                        else None
+                    ),
                     "entities": [],
                 }
             devices_map[device_key]["entities"].append(entity_change)
