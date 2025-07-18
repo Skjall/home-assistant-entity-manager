@@ -14,5 +14,8 @@ export LOG_LEVEL
 
 bashio::log.info "Starting web UI with log level: ${LOG_LEVEL}"
 
-# Start the Flask application without exec to avoid PID 1 issue
-python3 /app/web_ui.py
+# Change to app directory
+cd /app || exit 1
+
+# Start the Flask application
+exec python3 web_ui.py
