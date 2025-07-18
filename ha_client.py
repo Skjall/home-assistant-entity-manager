@@ -1,7 +1,5 @@
-import asyncio
-import json
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 import aiohttp
 
@@ -56,17 +54,13 @@ class HomeAssistantClient:
     ) -> Dict[str, Any]:
         # Entity registry updates must be done via WebSocket
         # This function is a placeholder for the integration
-        raise NotImplementedError(
-            "Entity registry updates require WebSocket connection"
-        )
+        raise NotImplementedError("Entity registry updates require WebSocket connection")
 
     async def call_service(self, domain: str, service: str, data: Dict = None) -> Any:
         url = f"{self.base_url}/api/services/{domain}/{service}"
         # Create temporary session for this request
         async with aiohttp.ClientSession() as session:
-            async with session.post(
-                url, headers=self.headers, json=data or {}
-            ) as response:
+            async with session.post(url, headers=self.headers, json=data or {}) as response:
                 response.raise_for_status()
                 return await response.json()
 

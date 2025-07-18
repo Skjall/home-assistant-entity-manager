@@ -90,9 +90,7 @@ class EntityRestructurer:
         """Lade die komplette Struktur von Home Assistant über WebSocket"""
         # Wenn kein WebSocket Client übergeben wurde, verwende REST API Fallback
         if not ws_client:
-            logger.warning(
-                "Kein WebSocket Client verfügbar, nutze eingeschränkten Modus"
-            )
+            logger.warning("Kein WebSocket Client verfügbar, nutze eingeschränkten Modus")
             self.areas = {}
             self.devices = {}
             self.entities = {}
@@ -101,9 +99,7 @@ class EntityRestructurer:
         try:
             # Lade Areas über WebSocket
             logger.info("Loading areas via WebSocket...")
-            msg_id = await ws_client._send_message(
-                {"type": "config/area_registry/list"}
-            )
+            msg_id = await ws_client._send_message({"type": "config/area_registry/list"})
             response = await ws_client._receive_message()
             while response.get("id") != msg_id:
                 response = await ws_client._receive_message()
@@ -121,9 +117,7 @@ class EntityRestructurer:
         try:
             # Lade Devices über WebSocket
             logger.info("Loading devices via WebSocket...")
-            msg_id = await ws_client._send_message(
-                {"type": "config/device_registry/list"}
-            )
+            msg_id = await ws_client._send_message({"type": "config/device_registry/list"})
             response = await ws_client._receive_message()
             while response.get("id") != msg_id:
                 response = await ws_client._receive_message()
@@ -142,9 +136,7 @@ class EntityRestructurer:
         try:
             logger.info("Loading entity registry...")
 
-            msg_id = await ws_client._send_message(
-                {"type": "config/entity_registry/list"}
-            )
+            msg_id = await ws_client._send_message({"type": "config/entity_registry/list"})
 
             response = await ws_client._receive_message()
             while response.get("id") != msg_id:
@@ -156,15 +148,9 @@ class EntityRestructurer:
                 logger.info(f"Loaded {len(self.entities)} entities from registry")
 
                 # Zähle maintained Labels
-                maintained_count = sum(
-                    1
-                    for e in self.entities.values()
-                    if "maintained" in e.get("labels", [])
-                )
+                maintained_count = sum(1 for e in self.entities.values() if "maintained" in e.get("labels", []))
                 if maintained_count > 0:
-                    logger.info(
-                        f"Found {maintained_count} entities with maintained label"
-                    )
+                    logger.info(f"Found {maintained_count} entities with maintained label")
             else:
                 logger.error(f"Failed to load entity registry: {response}")
                 self.entities = {}
@@ -173,9 +159,7 @@ class EntityRestructurer:
             logger.error(f"Failed to load entity registry: {e}")
             self.entities = {}
 
-    def get_entity_type(
-        self, entity_id: str, device_class: Optional[str] = None
-    ) -> str:
+    def get_entity_type(self, entity_id: str, device_class: Optional[str] = None) -> str:
         """Bestimme den Entity-Typ basierend auf Domain und Device Class"""
         domain = entity_id.split(".")[0]
 
@@ -195,9 +179,7 @@ class EntityRestructurer:
 
         return "sensor"  # Default
 
-    def generate_new_entity_id(
-        self, entity_id: str, state_info: Dict
-    ) -> Tuple[str, str]:
+    def generate_new_entity_id(self, entity_id: str, state_info: Dict) -> Tuple[str, str]:
         """
         Generiere neue Entity ID basierend auf:
         1. Area/Raum des Geräts oder der Entity
@@ -274,20 +256,12 @@ class EntityRestructurer:
         device_name = ""
         if device:
             # Prüfe auf Device Override
-            device_override = (
-                self.naming_overrides.get_device_override(device_id)
-                if device_id
-                else None
-            )
+            device_override = self.naming_overrides.get_device_override(device_id) if device_id else None
             if device_override:
                 device_name = self.normalize_name(device_override["name"])
             else:
                 # Verwende den Device Namen oder Modell
-                device_name = (
-                    device.get("name_by_user")
-                    or device.get("name")
-                    or device.get("model", "")
-                )
+                device_name = device.get("name_by_user") or device.get("name") or device.get("model", "")
                 device_name = self.normalize_name(device_name)
         else:
             # Kein Device gefunden - versuche aus Entity Name zu extrahieren
@@ -324,11 +298,7 @@ class EntityRestructurer:
 
         # Prüfe auf Entity Override
         registry_id = entity_reg.get("id", "")  # Die unveränderliche UUID
-        entity_override = (
-            self.naming_overrides.get_entity_override(registry_id)
-            if registry_id
-            else None
-        )
+        entity_override = self.naming_overrides.get_entity_override(registry_id) if registry_id else None
 
         # Wenn Override vorhanden, verwende ihn als Basis für Entity Type
         if entity_override and entity_override.get("name"):
@@ -364,11 +334,7 @@ class EntityRestructurer:
         # Hole Device Name für Friendly Name
         device_friendly_name = None
         if device:
-            device_override = (
-                self.naming_overrides.get_device_override(device_id)
-                if device_id
-                else None
-            )
+            device_override = self.naming_overrides.get_device_override(device_id) if device_id else None
             if device_override:
                 device_friendly_name = device_override["name"]
             else:
@@ -378,9 +344,7 @@ class EntityRestructurer:
         if room and device_friendly_name:
             # Verwende room_display wenn vorhanden (mit Area Override), sonst formatiere room
             if not room_display:
-                room_display = (
-                    room.replace("u", "ü").replace("o", "ö").replace("a", "ä").title()
-                )
+                room_display = room.replace("u", "ü").replace("o", "ö").replace("a", "ä").title()
 
             # Wenn Device Name nicht mit Raum beginnt, füge Raum hinzu
             if not device_friendly_name.lower().startswith(room_display.lower()):
@@ -389,9 +353,7 @@ class EntityRestructurer:
         elif room:
             # Verwende room_display wenn vorhanden (mit Area Override), sonst formatiere room
             if not room_display:
-                room_display = (
-                    room.replace("u", "ü").replace("o", "ö").replace("a", "ä")
-                )
+                room_display = room.replace("u", "ü").replace("o", "ö").replace("a", "ä")
             friendly_parts.append(room_display.title())
         elif device_friendly_name:
             friendly_parts.append(device_friendly_name)
@@ -410,9 +372,7 @@ class EntityRestructurer:
 
         return new_entity_id, friendly_name
 
-    def calculate_new_entity_name(
-        self, entity_id: str, force_recalculate: bool = False
-    ) -> Tuple[str, str]:
+    def calculate_new_entity_name(self, entity_id: str, force_recalculate: bool = False) -> Tuple[str, str]:
         """
         Berechne neuen Entity Namen basierend auf aktuellen Device/Area Daten
 

@@ -19,9 +19,7 @@ class HomeAssistantWebSocket:
 
     async def connect(self):
         # Erhöhe das max_size Limit auf 10MB für große Entity Registries
-        self.websocket = await websockets.connect(
-            self.url, max_size=10 * 1024 * 1024  # 10MB statt default 1MB
-        )
+        self.websocket = await websockets.connect(self.url, max_size=10 * 1024 * 1024)  # 10MB statt default 1MB
 
         auth_msg = await self._receive_message()
         if auth_msg["type"] != "auth_required":
@@ -51,9 +49,7 @@ class HomeAssistantWebSocket:
         message = await self.websocket.recv()
         return json.loads(message)
 
-    async def call_service(
-        self, domain: str, service: str, data: Optional[Dict] = None
-    ) -> Dict[str, Any]:
+    async def call_service(self, domain: str, service: str, data: Optional[Dict] = None) -> Dict[str, Any]:
         message = {
             "type": "call_service",
             "domain": domain,
@@ -98,9 +94,7 @@ class HomeAssistantWebSocket:
         return response.get("result", {})
 
     async def subscribe_events(self, event_type: str, callback: Callable) -> int:
-        msg_id = await self._send_message(
-            {"type": "subscribe_events", "event_type": event_type}
-        )
+        msg_id = await self._send_message({"type": "subscribe_events", "event_type": event_type})
 
         response = await self._receive_message()
         while response.get("id") != msg_id:
@@ -112,9 +106,7 @@ class HomeAssistantWebSocket:
         return msg_id
 
     async def get_entity_registry_entry(self, entity_id: str) -> Dict[str, Any]:
-        msg_id = await self._send_message(
-            {"type": "config/entity_registry/get", "entity_id": entity_id}
-        )
+        msg_id = await self._send_message({"type": "config/entity_registry/get", "entity_id": entity_id})
 
         response = await self._receive_message()
         while response.get("id") != msg_id:
