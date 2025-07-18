@@ -21,7 +21,7 @@ class NamingOverrides:
             try:
                 with open(self.storage_path, "r", encoding="utf-8") as f:
                     return json.load(f)
-            except Exception as e:
+            except (json.JSONDecodeError, IOError) as e:
                 logger.error(f"Fehler beim Laden der Overrides: {e}")
 
         # Default-Struktur
