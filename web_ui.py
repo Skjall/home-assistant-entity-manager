@@ -240,18 +240,6 @@ def serve_font_workaround(filename):
         # Strip query parameters
         filename = filename.split("?")[0]
         return send_from_directory("static/fonts", filename)
-
-    # Log CSS file requests for debugging
-    if filename == "styles.css":
-        logger.info(f"Serving styles.css from static/css/")
-        import os
-
-        css_path = os.path.join("static/css", filename)
-        if os.path.exists(css_path):
-            logger.info(f"styles.css exists, size: {os.path.getsize(css_path)} bytes")
-        else:
-            logger.error(f"styles.css not found at {css_path}")
-
     return send_from_directory("static/css", filename)
 
 
