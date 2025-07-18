@@ -15,7 +15,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: "3.13"
 
       - name: Install dependencies
         run: |
@@ -101,7 +101,7 @@ jobs:
           # Check config.json has required fields
           jq -e '.name and .version and .slug and .description and .arch' config.json > /dev/null
           echo "✓ config.json has all required fields"
-          
+
           # Check build.json has build_from for all architectures
           jq -e '.build_from | keys' build.json > /dev/null
           echo "✓ build.json has build_from configuration"
