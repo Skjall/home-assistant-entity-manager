@@ -8,7 +8,7 @@ on:
 
 jobs:
   test:
-    runs-on: home-assistant-entity-manager
+    runs-on: arc-home-assistant-entity-manager
     strategy:
       matrix:
         python-version: ["3.12", "3.13"]
@@ -17,6 +17,19 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+
+      - name: Install system dependencies
+        run: |
+          # Check if we can install build dependencies
+          if command -v apt-get &> /dev/null; then
+            sudo apt-get update && sudo apt-get install -y gcc python3-dev || true
+          elif command -v yum &> /dev/null; then
+            sudo yum install -y gcc python3-devel || true
+          elif command -v apk &> /dev/null; then
+            sudo apk add --no-cache gcc musl-dev python3-dev || true
+          else
+            echo "No known package manager found, continuing without build tools"
+          fi
 
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
@@ -33,7 +46,8 @@ jobs:
 
       - name: Install dependencies
         run: |
-          python -m pip install --upgrade pip
+          python -m pip install --upgrade pip wheel setuptools
+          # Install test requirements
           pip install -r requirements-test.txt
           pip install flake8 mypy black isort
 
