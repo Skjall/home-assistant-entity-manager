@@ -17,8 +17,20 @@ COPY requirements.txt /tmp/
 # Install Python dependencies
 RUN pip3 install --no-cache-dir -r /tmp/requirements.txt
 
-# Copy application
-COPY . /app
+# Copy application files
+COPY web_ui.py /app/
+COPY dependency_scanner.py /app/
+COPY dependency_updater.py /app/
+COPY device_registry.py /app/
+COPY entity_registry.py /app/
+COPY entity_restructurer.py /app/
+COPY ha_client.py /app/
+COPY ha_websocket.py /app/
+COPY label_registry.py /app/
+COPY naming_overrides.py /app/
+COPY scene_updater.py /app/
+COPY templates/ /app/templates/
+COPY naming_overrides.json /app/
 WORKDIR /app
 
 # Create startup script

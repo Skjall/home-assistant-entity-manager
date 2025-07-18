@@ -1,15 +1,12 @@
-# Home Assistant Entity Manager
+# Home Assistant Entity Manager Add-on
 
-[![Beta](https://img.shields.io/badge/Status-Beta-yellow.svg)](https://github.com/Skjall/home-assistant-entity-manager)
-[![hacs_badge](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://github.com/hacs/integration)
+[![Alpha](https://img.shields.io/badge/Status-Alpha-red.svg)](https://github.com/Skjall/home-assistant-entity-manager)
 [![GitHub Release](https://img.shields.io/github/release/Skjall/home-assistant-entity-manager.svg?style=flat-square)](https://github.com/Skjall/home-assistant-entity-manager/releases)
 [![License](https://img.shields.io/github/license/Skjall/home-assistant-entity-manager.svg?style=flat-square)](LICENSE)
 
-A Home Assistant integration for standardizing and managing entity names according to a consistent, logical naming convention. Available through HACS (Home Assistant Community Store).
+A Home Assistant Add-on for standardizing and managing entity names according to a consistent, logical naming convention with an integrated Web UI.
 
-> **⚠️ Beta Software**: This integration is currently in beta testing. While core functionality is stable, you may encounter bugs. Please report any issues on the [GitHub Issues](https://github.com/Skjall/home-assistant-entity-manager/issues) page.
->
-> **🆕 Alpha Add-on Available**: An experimental Home Assistant Add-on version is also available for testing. See [Add-on Documentation](README_ADDON.md) for details.
+> **⚠️ ALPHA SOFTWARE**: This Add-on is in early development and may have bugs. DO NOT use in production environments. Please report any issues on the [GitHub Issues](https://github.com/Skjall/home-assistant-entity-manager/issues) page.
 
 ## Features
 
@@ -28,81 +25,43 @@ A Home Assistant integration for standardizing and managing entity names accordi
 
 ## Installation
 
-### Via HACS (Recommended)
+[![Open your Home Assistant instance and show the add add-on repository dialog with a specific repository URL pre-filled.](https://my.home-assistant.io/badges/supervisor_add_addon_repository.svg)](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2FSkjall%2Fhome-assistant-entity-manager)
 
-[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=Skjall&repository=home-assistant-entity-manager&category=integration)
+<details>
+<summary>Manual Add-on installation</summary>
 
-#### Manual steps:
-1. Open HACS in your Home Assistant instance
-2. Click on "Integrations"
-3. Click the three dots in the top right corner and select "Custom repositories"
-4. Add this repository URL: `https://github.com/Skjall/home-assistant-entity-manager`
-5. Select "Integration" as the category
-6. Click "Add"
-7. Search for "Entity Manager" and install it
-8. Restart Home Assistant
-9. Go to Settings → Devices & Services → Add Integration → Entity Manager
+1. Navigate to Supervisor → Add-on Store
+2. Click the three dots menu → Repositories
+3. Add this repository: `https://github.com/Skjall/home-assistant-entity-manager`
+4. Click "Add"
+5. Find "Entity Manager (Alpha)" in the add-on store
+6. Click on it and then click "Install"
+7. Start the add-on
+8. Click "OPEN WEB UI" to access the interface
+</details>
 
-### Manual Installation
-
-1. Copy the `custom_components/entity_manager` folder to your Home Assistant's `custom_components` directory
-2. Restart Home Assistant
-3. Go to Settings → Devices & Services → Add Integration → Entity Manager
 
 ## Usage
 
-### Using Services
-
-After installation, the integration provides several services:
-
-#### `entity_manager.analyze_entities`
-Preview entity renaming without making changes.
-
-```yaml
-service: entity_manager.analyze_entities
-data:
-  limit: 10
-  skip_reviewed: true
-```
-
-#### `entity_manager.rename_entity`
-Rename a single entity.
-
-```yaml
-service: entity_manager.rename_entity
-data:
-  entity_id: light.kitchen_ceiling
-```
-
-#### `entity_manager.rename_bulk`
-Rename multiple entities at once.
-
-```yaml
-service: entity_manager.rename_bulk
-data:
-  limit: 50
-  skip_reviewed: true
-  dry_run: false  # Set to true for preview only
-```
-
-### Using the Web Interface
-
-After installation, the Entity Manager provides a web interface panel in Home Assistant:
+After installing and starting the Add-on:
 
 1. Navigate to the sidebar in Home Assistant
-2. Click on "Entity Manager" (admin access required)
+2. Click on "Entity Manager" 
 3. Select an area from the dropdown
 4. Optionally filter by domain (light, switch, sensor, etc.)
 5. Preview entities that need renaming
-6. Select entities to process
-7. Click "Process X entities" to apply changes
+6. Review dependency warnings (shows which automations/scenes use each entity)
+7. Select entities to process
+8. Click "Execute Changes" to apply
 
 The web interface features:
 - **Area-based navigation**: Browse entities organized by room/area
-- **Domain filtering**: Filter entities by type
-- **Visual indicators**: See which entities need renaming
-- **Batch operations**: Select and rename multiple entities at once
-- **Skip maintained**: Option to hide entities already processed
+- **Domain filtering**: Filter entities by type (light, switch, sensor, etc.)
+- **Visual indicators**: See which entities need renaming at a glance
+- **Dependency detection**: See which automations and scenes use each entity
+- **Safe preview**: Review all changes before applying them
+- **Device management**: Rename devices directly from the interface
+- **Custom overrides**: Set custom names for specific entities
 
 ## Naming Convention
 
@@ -150,109 +109,64 @@ Create a `naming_overrides.json` file to customize naming:
 4. **Validation**: Comprehensive checks before applying changes
 5. **WebSocket & REST API**: Reliable communication with Home Assistant
 
-## Project Structure
+## Add-on Structure
 
 ```
-├── rename_entities.py      # Main CLI tool
+├── config.json            # Add-on configuration
+├── Dockerfile             # Add-on container definition
+├── build.json             # Build configuration
+├── repository.json        # Repository metadata
 ├── web_ui.py              # Flask web interface
-├── entity_restructurer.py  # Core renaming logic
-├── dependency_scanner.py   # Find entity references
-├── dependency_updater.py   # Update references
-├── ha_websocket.py        # WebSocket client
-├── ha_client.py           # REST API client
+├── entity_restructurer.py # Core renaming logic
+├── dependency_scanner.py  # Find entity references
+├── dependency_updater.py  # Update references
 ├── entity_registry.py     # Entity management
 ├── device_registry.py     # Device management
 ├── label_registry.py      # Label operations
 └── templates/             # Web UI templates
 ```
 
-## Development
-
-### Example Scripts
-
-The `examples/` directory contains various test scripts and utilities:
-
-```bash
-cd examples/
-python test_api.py              # Test API connectivity
-python test_websocket_registry.py  # Test WebSocket connections
-python check_dependencies.py    # Check entity dependencies
-```
-
-### Contributing
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
 
 ## Troubleshooting
 
 ### Common Issues
 
-#### Service not found
-If you get "Service entity_manager.analyze_entities not found":
-1. Check the integration is properly installed and loaded
-2. Restart Home Assistant
-3. Check logs for any errors during startup
+#### Add-on won't start
+If the Add-on fails to start:
+1. Check the Add-on logs for error messages
+2. Ensure Home Assistant 2025.7.2 or newer is installed
+3. Verify the Add-on has the necessary permissions
+
+#### Web UI not accessible
+If you can't access the web interface:
+1. Ensure the Add-on is running
+2. Try restarting the Add-on
+3. Check if Ingress is enabled in the Add-on configuration
 
 #### Entity rename fails
 If entity renaming fails:
 1. Check the entity ID is valid
 2. Ensure the entity is not locked or read-only
 3. Check if the new entity ID already exists
-4. Review logs for specific error messages
-
-#### Missing entities in analysis
-If entities are missing from analysis:
-1. Check if they have the "maintained" label (use `show_reviewed: true`)
-2. Increase the `limit` parameter
-3. Verify entities are registered in Home Assistant
+4. Review Add-on logs for specific error messages
 
 ### Debug Logging
 
-Enable debug logging for the integration:
-
-```yaml
-logger:
-  default: info
-  logs:
-    custom_components.entity_manager: debug
-```
+Check the Add-on logs in Supervisor → Entity Manager → Logs
 
 ## Development
 
-### Running Tests
+### Building the Add-on Locally
 
 ```bash
-# Install test dependencies
-pip install -r requirements-test.txt
+# Build for your architecture
+docker build --build-arg BUILD_FROM="ghcr.io/home-assistant/amd64-base-python:3.12" -t local/entity_manager .
 
-# Run tests with coverage
-pytest tests/ -v --cov=custom_components.entity_manager
-
-# Run specific test
-pytest tests/test_services.py -v
-
-# Run with coverage report
-pytest tests/ --cov=custom_components.entity_manager --cov-report=html
-```
-
-### Code Quality
-
-```bash
-# Format code
-black custom_components tests
-
-# Sort imports
-isort custom_components tests
-
-# Type checking
-mypy custom_components
-
-# Linting
-flake8 custom_components
+# Run locally for testing
+docker run --rm -it -p 5000:5000 \
+  -e HA_URL="http://your-ha-instance:8123" \
+  -e HA_TOKEN="your-long-lived-token" \
+  local/entity_manager
 ```
 
 ## Contributing

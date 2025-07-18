@@ -58,8 +58,8 @@ config.local.json
 *.bak
 .cache/
 
-# Legacy CLI tools (optional - uncomment to exclude)
-# legacy/
+# Legacy CLI tools
+legacy/
 
 # VEnvs
 venv-*/
