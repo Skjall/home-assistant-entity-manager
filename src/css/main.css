@@ -1,0 +1,38 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom styles for Entity Manager */
+[x-cloak] { display: none !important; }
+
+.entity-card {
+    transition: all 0.2s ease;
+    cursor: pointer;
+    user-select: none;
+}
+
+.entity-card:hover {
+    transform: translateX(4px);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.entity-card.selected {
+    border: 2px solid #3b82f6;
+    background: linear-gradient(to right, #eff6ff 0%, #ffffff 100%);
+}
+
+.needs-rename {
+    background: linear-gradient(to right, #fef3c7 0%, #ffffff 100%);
+}
+
+.needs-rename.selected {
+    background: linear-gradient(to right, #dbeafe 0%, #fef3c7 50%, #ffffff 100%);
+}
+
+.already-correct {
+    background: linear-gradient(to right, #d1fae5 0%, #ffffff 100%);
+}
+
+.already-correct.selected {
+    background: linear-gradient(to right, #dbeafe 0%, #d1fae5 50%, #ffffff 100%);
+}

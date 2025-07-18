@@ -23,7 +23,7 @@ from naming_overrides import NamingOverrides
 # Don't load .env in Add-on mode - use environment variables from Supervisor
 # load_dotenv()
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder="static", static_url_path="/static")
 # Support for Ingress proxy headers
 app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
 CORS(app)

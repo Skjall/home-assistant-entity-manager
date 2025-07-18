@@ -66,3 +66,10 @@ venv-*/
 
 # AI Assistance
 CLAUDE.md
+
+# Node modules
+node_modules/
+package-lock.json
+
+# Build output
+static/

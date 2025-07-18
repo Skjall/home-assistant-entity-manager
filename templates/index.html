@@ -4,40 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Home Assistant Entity Manager</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
-    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
-    <style>
-        [x-cloak] { display: none !important; }
-        .entity-card {
-            transition: all 0.2s ease;
-            cursor: pointer;
-            user-select: none;
-        }
-        .entity-card:hover {
-            transform: translateX(4px);
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-        }
-        .entity-card.selected {
-            border: 2px solid #3b82f6;
-            background: linear-gradient(to right, #eff6ff 0%, #ffffff 100%);
-        }
-        .needs-rename {
-            background: linear-gradient(to right, #fef3c7 0%, #ffffff 100%);
-        }
-        .needs-rename.selected {
-            background: linear-gradient(to right, #dbeafe 0%, #fef3c7 50%, #ffffff 100%);
-        }
-        .already-correct {
-            background: linear-gradient(to right, #d1fae5 0%, #ffffff 100%);
-        }
-        .already-correct.selected {
-            background: linear-gradient(to right, #dbeafe 0%, #d1fae5 50%, #ffffff 100%);
-        }
-        .selection-indicator {
-            transition: all 0.2s ease;
-        }
-    </style>
+    <link href="static/css/styles.css" rel="stylesheet">
+    <link href="static/css/remixicon.css" rel="stylesheet">
+    <script src="static/js/alpine.min.js" defer></script>
+    <script src="static/js/app.js" defer></script>
 </head>
 <body class="bg-gray-50">
     <div x-data="entityManager()" x-init="init()" class="min-h-screen">
@@ -638,11 +608,11 @@
 
                 async loadAreas() {
                     try {
-                        const response = await fetch('/api/areas');
+                        const response = await fetch('api/areas');
                         this.areas = await response.json();
 
                         // Load stats
-                        const statsResponse = await fetch('/api/stats');
+                        const statsResponse = await fetch('api/stats');
                         this.stats = await statsResponse.json();
                     } catch (error) {
                         this.showMessage('Fehler beim Laden der Areas', 'error');
@@ -693,7 +663,7 @@
                     this.updateURL();
 
                     try {
-                        const response = await fetch('/api/preview', {
+                        const response = await fetch('api/preview', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({
@@ -999,7 +969,7 @@
                     device.editing = false;
 
                     try {
-                        const response = await fetch('/api/set_device_override', {
+                        const response = await fetch('api/set_device_override', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({
@@ -1024,7 +994,7 @@
                     if (!this.selectedDevice || !this.newDeviceName.trim()) return;
 
                     try {
-                        const response = await fetch('/api/rename_device', {
+                        const response = await fetch('api/rename_device', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({
@@ -1058,7 +1028,7 @@
                     }
 
                     try {
-                        const response = await fetch('/api/rename_device_in_ha', {
+                        const response = await fetch('api/rename_device_in_ha', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({
@@ -1149,7 +1119,7 @@
 
                 async saveEntityEdit(entity) {
                     try {
-                        const response = await fetch('/api/set_entity_override', {
+                        const response = await fetch('api/set_entity_override', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({
@@ -1212,7 +1182,7 @@
                     }
 
                     try {
-                        const response = await fetch('/api/set_area_override', {
+                        const response = await fetch('api/set_area_override', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({
@@ -1272,7 +1242,7 @@
                     });
 
                     try {
-                        const response = await fetch('/api/execute', {
+                        const response = await fetch('api/execute', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({

@@ -1,17 +1,29 @@
 ARG BUILD_FROM=ghcr.io/home-assistant/amd64-base-python:3.13-alpine3.20
 FROM $BUILD_FROM
 
-# Install build dependencies
-# Note: Python is already installed in the base image
+# Install runtime dependencies
 RUN apk add --no-cache \
     gcc \
     musl-dev \
     python3-dev
 
-# Copy requirements file
-COPY requirements.txt /tmp/
+# Install Node.js temporarily for building frontend
+RUN apk add --no-cache nodejs npm
+
+# Build frontend assets
+WORKDIR /build
+COPY package.json postcss.config.js tailwind.config.js ./
+COPY src/ ./src/
+RUN npm ci && \
+    npm run build && \
+    mkdir -p /app/static && \
+    cp -r static/* /app/static/ && \
+    cd / && \
+    rm -rf /build && \
+    apk del nodejs npm
 
 # Install Python dependencies
+COPY requirements.txt /tmp/
 RUN pip3 install --no-cache-dir -r /tmp/requirements.txt
 
 # Copy application files

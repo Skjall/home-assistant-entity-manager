@@ -1,0 +1,26 @@
+{
+  "name": "home-assistant-entity-manager",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Home Assistant Entity Manager Add-on",
+  "scripts": {
+    "build": "npm run build:css && npm run build:js && npm run copy:assets",
+    "build:css": "postcss src/css/main.css -o static/css/styles.css",
+    "build:js": "esbuild src/js/app.js --bundle --minify --outfile=static/js/app.js",
+    "copy:assets": "npm run copy:alpine && npm run copy:remixicon",
+    "copy:alpine": "cp node_modules/alpinejs/dist/cdn.min.js static/js/alpine.min.js",
+    "copy:remixicon": "cp node_modules/remixicon/fonts/remixicon.css static/css/ && cp node_modules/remixicon/fonts/remixicon.woff* static/fonts/",
+    "watch": "npm run build -- --watch"
+  },
+  "dependencies": {
+    "alpinejs": "^3.13.3",
+    "remixicon": "^3.5.0"
+  },
+  "devDependencies": {
+    "autoprefixer": "^10.4.16",
+    "esbuild": "^0.19.11",
+    "postcss": "^8.4.33",
+    "postcss-cli": "^11.0.0",
+    "tailwindcss": "^3.4.0"
+  }
+}
