@@ -19,6 +19,11 @@ A Home Assistant integration for standardizing and managing entity names accordi
 - **Web Interface**: Visualize and manage entities through an intuitive UI
 - **Safe Operations**: Dry-run mode and comprehensive validation before changes
 
+## Requirements
+
+- Home Assistant 2025.7.2 or newer
+- Python 3.12 or 3.13
+
 ## Installation
 
 ### Via HACS (Recommended)

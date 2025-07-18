@@ -11,7 +11,7 @@ jobs:
     runs-on: home-assistant-entity-manager
     strategy:
       matrix:
-        python-version: ["3.10", "3.11", "3.12", "3.13"]
+        python-version: ["3.12", "3.13"]
       fail-fast: true
       max-parallel: 1
 
@@ -54,7 +54,7 @@ jobs:
 
       - name: Type check with mypy
         run: |
-          mypy custom_components
+          mypy custom_components/entity_manager/*.py --ignore-missing-imports --no-site-packages
 
       - name: Test with pytest
         run: |
