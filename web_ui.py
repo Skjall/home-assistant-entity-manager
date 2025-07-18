@@ -8,7 +8,6 @@ import logging
 import os
 
 import aiohttp
-from device_registry_updater import DeviceRegistryUpdater
 from flask import Flask, jsonify, render_template, request
 from flask_cors import CORS
 from werkzeug.middleware.proxy_fix import ProxyFix
