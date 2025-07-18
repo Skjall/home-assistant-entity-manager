@@ -585,7 +585,7 @@ async def _execute_changes_async():
 
     try:
         entity_registry = EntityRegistry(ws)
-        device_updater = DeviceRegistryUpdater(ws)
+        device_registry = DeviceRegistry(ws)
 
         # Dependency Updater nutzt REST API
         base_url = os.getenv("HA_URL")
@@ -606,7 +606,7 @@ async def _execute_changes_async():
             try:
                 # Benenne Device um
                 logger.info(f"Renaming device {device_id} to {new_device_name}")
-                success = await device_updater.rename_device(device_id, new_device_name)
+                success = await device_registry.rename_device(device_id, new_device_name)
 
                 if success:
                     # Speichere Override mit Basisname
@@ -1221,8 +1221,8 @@ async def _rename_device_in_ha_async():
         await ws.connect()
 
         try:
-            device_updater = DeviceRegistryUpdater(ws)
-            success = await device_updater.rename_device(device_id, new_name)
+            device_registry = DeviceRegistry(ws)
+            success = await device_registry.rename_device(device_id, new_name)
 
             if success:
                 # Speichere auch als Override
