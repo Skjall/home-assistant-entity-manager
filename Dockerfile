@@ -36,4 +36,5 @@ RUN echo '{}' > /app/naming_overrides.json
 COPY run.sh /run.sh
 RUN chmod a+x /run.sh
 
-# Remove CMD - let the base image handle init
+# For modern add-ons with init: false, use CMD to run directly
+CMD [ "/run.sh" ]
