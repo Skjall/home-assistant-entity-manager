@@ -39,14 +39,24 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('requirements*.txt') }}
+          key: ${{ runner.os }}-pip-${{ matrix.python-version }}-${{ hashFiles('requirements*.txt') }}
           restore-keys: |
+            ${{ runner.os }}-pip-${{ matrix.python-version }}-
             ${{ runner.os }}-pip-
+
+      - name: Configure pip for better downloads
+        run: |
+          mkdir -p ~/.pip
+          echo "[global]" > ~/.pip/pip.conf
+          echo "timeout = 600" >> ~/.pip/pip.conf
+          echo "retries = 10" >> ~/.pip/pip.conf
+          echo "retry = 1" >> ~/.pip/pip.conf
+          echo "disable-pip-version-check = true" >> ~/.pip/pip.conf
 
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip wheel setuptools
-          # Install test requirements
+          # Install test requirements - pip will use the config above
           pip install -r requirements-test.txt
           pip install flake8 mypy black isort
 
@@ -83,7 +93,7 @@ jobs:
           fail_ci_if_error: false
 
   validate:
-    runs-on: arc-home-assistant-entity-manager
+    runs-on: home-assistant-entity-manager
     steps:
       - uses: actions/checkout@v4
 
