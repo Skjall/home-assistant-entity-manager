@@ -4,6 +4,7 @@
   "private": true,
   "description": "Home Assistant Entity Manager Add-on",
   "scripts": {
+    "prebuild": "mkdir -p static/css static/js static/fonts",
     "build": "npm run build:css && npm run build:js && npm run copy:assets",
     "build:css": "postcss src/css/main.css -o static/css/styles.css",
     "build:js": "esbuild src/js/app.js --bundle --minify --outfile=static/js/app.js",

@@ -12,7 +12,7 @@ RUN apk add --no-cache nodejs npm
 
 # Build frontend assets
 WORKDIR /build
-COPY package.json postcss.config.js tailwind.config.js ./
+COPY package.json package-lock.json postcss.config.js tailwind.config.js ./
 COPY src/ ./src/
 RUN npm ci && \
     npm run build && \
