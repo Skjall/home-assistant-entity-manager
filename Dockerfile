@@ -30,8 +30,10 @@ COPY label_registry.py /app/
 COPY naming_overrides.py /app/
 COPY scene_updater.py /app/
 COPY templates/ /app/templates/
-COPY naming_overrides.json /app/
 WORKDIR /app
+
+# Copy optional naming_overrides.json if it exists
+RUN echo '{}' > /app/naming_overrides.json
 
 # Create startup script
 RUN echo '#!/usr/bin/env bashio' > /run.sh && \
