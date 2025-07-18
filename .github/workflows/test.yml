@@ -83,13 +83,28 @@ jobs:
         run: |
           pytest tests/ -v --cov=custom_components.entity_manager --cov-report=xml --cov-report=term
 
+      - name: Debug network settings
+        run: |
+          echo "=== Network debugging ==="
+          echo "HTTP_PROXY: ${HTTP_PROXY:-not set}"
+          echo "HTTPS_PROXY: ${HTTPS_PROXY:-not set}"
+          echo "NO_PROXY: ${NO_PROXY:-not set}"
+          echo "=== Testing connectivity ==="
+          curl -I https://codecov.io || echo "curl to codecov.io failed"
+
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v5
+        env:
+          # Clear proxy settings for Codecov upload
+          HTTP_PROXY: ""
+          HTTPS_PROXY: ""
+          http_proxy: ""
+          https_proxy: ""
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           file: ./coverage.xml
           flags: unittests
-          name: codecov-umbrella
+          name: codecov-py${{ matrix.python-version }}
           fail_ci_if_error: false
 
   validate:
