@@ -14,6 +14,7 @@ RUN apk add --no-cache nodejs npm
 WORKDIR /build
 COPY package.json package-lock.json postcss.config.js tailwind.config.js ./
 COPY src/ ./src/
+COPY scripts/ ./scripts/
 RUN npm ci && \
     npm run build && \
     mkdir -p /app/static && \

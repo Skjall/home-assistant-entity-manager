@@ -10,7 +10,8 @@
     "build:js": "esbuild src/js/app.js --bundle --minify --outfile=static/js/app.js",
     "copy:assets": "npm run copy:alpine && npm run copy:remixicon",
     "copy:alpine": "cp node_modules/alpinejs/dist/cdn.min.js static/js/alpine.min.js",
-    "copy:remixicon": "cp node_modules/remixicon/fonts/remixicon.css static/css/ && cp node_modules/remixicon/fonts/remixicon.woff* static/fonts/",
+    "copy:remixicon": "cp node_modules/remixicon/fonts/remixicon.css static/css/ && cp node_modules/remixicon/fonts/remixicon.woff* static/fonts/ && npm run fix:remixicon-paths",
+    "fix:remixicon-paths": "node scripts/fix-font-paths.js",
     "watch": "npm run build -- --watch"
   },
   "dependencies": {
