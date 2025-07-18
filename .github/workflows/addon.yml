@@ -71,17 +71,17 @@ jobs:
 
       - name: Validate config.json
         run: |
-          python -m json.tool config.json > /dev/null
+          python3 -m json.tool config.json > /dev/null
           echo "✓ config.json is valid JSON"
 
       - name: Validate build.json
         run: |
-          python -m json.tool build.json > /dev/null
+          python3 -m json.tool build.json > /dev/null
           echo "✓ build.json is valid JSON"
 
       - name: Validate repository.json
         run: |
-          python -m json.tool repository.json > /dev/null
+          python3 -m json.tool repository.json > /dev/null
           echo "✓ repository.json is valid JSON"
 
       - name: Check required fields
