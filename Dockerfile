@@ -1,12 +1,9 @@
-ARG BUILD_FROM
+ARG BUILD_FROM=ghcr.io/home-assistant/amd64-base-python:3.12-alpine3.20
 FROM $BUILD_FROM
 
-# Install requirements for add-on
+# Install build dependencies
+# Note: Python is already installed in the base image
 RUN apk add --no-cache \
-    python3 \
-    py3-pip \
-    py3-setuptools \
-    py3-wheel \
     gcc \
     musl-dev \
     python3-dev

@@ -40,6 +40,7 @@ jobs:
   build:
     runs-on: home-assistant-entity-manager
     strategy:
+      fail-fast: false
       matrix:
         arch: [amd64, aarch64, armv7, armhf, i386]
     steps:
@@ -54,6 +55,17 @@ jobs:
           BASE_IMAGE=$(jq -r ".build_from[\"${{ matrix.arch }}\"]" build.json)
           echo "base_image=$BASE_IMAGE" >> $GITHUB_OUTPUT
 
+      - name: Set platform
+        id: platform
+        run: |
+          case "${{ matrix.arch }}" in
+            amd64) echo "platform=linux/amd64" >> $GITHUB_OUTPUT ;;
+            aarch64) echo "platform=linux/arm64" >> $GITHUB_OUTPUT ;;
+            armv7) echo "platform=linux/arm/v7" >> $GITHUB_OUTPUT ;;
+            armhf) echo "platform=linux/arm/v6" >> $GITHUB_OUTPUT ;;
+            i386) echo "platform=linux/386" >> $GITHUB_OUTPUT ;;
+          esac
+
       - name: Build Add-on
         uses: docker/build-push-action@v5
         with:
@@ -62,7 +74,7 @@ jobs:
           tags: local/entity_manager:${{ matrix.arch }}
           build-args: |
             BUILD_FROM=${{ steps.base.outputs.base_image }}
-          platforms: linux/${{ matrix.arch }}
+          platforms: ${{ steps.platform.outputs.platform }}
 
   validate-addon:
     runs-on: home-assistant-entity-manager
