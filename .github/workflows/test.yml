@@ -8,7 +8,7 @@ on:
 
 jobs:
   test:
-    runs-on: arc-home-assistant-entity-manager
+    runs-on: home-assistant-entity-manager
     strategy:
       matrix:
         python-version: ["3.12", "3.13"]
