@@ -98,8 +98,6 @@ jobs:
           # Clear proxy settings for Codecov upload
           HTTP_PROXY: ""
           HTTPS_PROXY: ""
-          http_proxy: ""
-          https_proxy: ""
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           file: ./coverage.xml
