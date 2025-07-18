@@ -1,8 +1,6 @@
 name: Add-on CI
 
 on:
-  push:
-    branches: [main, next-release]
   pull_request:
     branches: [main, next-release]
 
