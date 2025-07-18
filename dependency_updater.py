@@ -6,7 +6,6 @@ import asyncio
 import json
 import logging
 import os
-import re
 from typing import Any, Dict, List, Optional
 
 import aiohttp
@@ -44,9 +43,7 @@ class DependencyUpdater:
                 if response.status == 200:
                     return await response.json()
                 else:
-                    logger.error(
-                        f"Fehler beim Abrufen der Scene {scene_numeric_id}: {response.status}"
-                    )
+                    logger.error(f"Fehler beim Abrufen der Scene {scene_numeric_id}: {response.status}")
                     return None
 
     async def update_scene_config(self, scene_numeric_id: str, config: Dict) -> bool:
@@ -82,9 +79,7 @@ class DependencyUpdater:
         entity_config = config["entities"].pop(old_entity_id)
         config["entities"][new_entity_id] = entity_config
 
-        logger.info(
-            f"Aktualisiere Scene {scene_id}: {old_entity_id} -> {new_entity_id}"
-        )
+        logger.info(f"Aktualisiere Scene {scene_id}: {old_entity_id} -> {new_entity_id}")
         return await self.update_scene_config(scene_numeric_id, config)
 
     # ===== SCRIPTS =====
@@ -99,9 +94,7 @@ class DependencyUpdater:
                 if response.status == 200:
                     return await response.json()
                 else:
-                    logger.error(
-                        f"Fehler beim Abrufen des Scripts {script_id}: {response.status}"
-                    )
+                    logger.error(f"Fehler beim Abrufen des Scripts {script_id}: {response.status}")
                     return None
 
     async def update_script_config(self, script_id: str, config: Dict) -> bool:
@@ -118,9 +111,7 @@ class DependencyUpdater:
                     logger.error(f"Fehler beim Update des Scripts: {response.status}")
                     return False
 
-    def replace_entity_in_dict(
-        self, data: Any, old_entity_id: str, new_entity_id: str
-    ) -> bool:
+    def replace_entity_in_dict(self, data: Any, old_entity_id: str, new_entity_id: str) -> bool:
         """Rekursiv Entity IDs in einem Dictionary ersetzen"""
         changed = False
 
@@ -129,15 +120,9 @@ class DependencyUpdater:
                 if key == "entity_id" and value == old_entity_id:
                     data[key] = new_entity_id
                     changed = True
-                elif (
-                    key == "entity_id"
-                    and isinstance(value, list)
-                    and old_entity_id in value
-                ):
+                elif key == "entity_id" and isinstance(value, list) and old_entity_id in value:
                     # Ersetze in Listen
-                    data[key] = [
-                        new_entity_id if e == old_entity_id else e for e in value
-                    ]
+                    data[key] = [new_entity_id if e == old_entity_id else e for e in value]
                     changed = True
                 elif isinstance(value, (dict, list)):
                     if self.replace_entity_in_dict(value, old_entity_id, new_entity_id):
@@ -155,9 +140,7 @@ class DependencyUpdater:
 
         return changed
 
-    async def update_script_entities(
-        self, script_id: str, old_entity_id: str, new_entity_id: str
-    ) -> bool:
+    async def update_script_entities(self, script_id: str, old_entity_id: str, new_entity_id: str) -> bool:
         """Aktualisiere Entity in einem Script"""
         config = await self.get_script_config(script_id)
         if not config:
@@ -167,9 +150,7 @@ class DependencyUpdater:
         changed = self.replace_entity_in_dict(config, old_entity_id, new_entity_id)
 
         if changed:
-            logger.info(
-                f"Aktualisiere Script {script_id}: {old_entity_id} -> {new_entity_id}"
-            )
+            logger.info(f"Aktualisiere Script {script_id}: {old_entity_id} -> {new_entity_id}")
             return await self.update_script_config(script_id, config)
 
         return False
@@ -190,9 +171,7 @@ class DependencyUpdater:
                     )
                     return None
 
-    async def update_automation_config(
-        self, automation_numeric_id: str, config: Dict
-    ) -> bool:
+    async def update_automation_config(self, automation_numeric_id: str, config: Dict) -> bool:
         """Aktualisiere Automation Konfiguration"""
         url = f"{self.base_url}/api/config/automation/config/{automation_numeric_id}"
 
@@ -202,9 +181,7 @@ class DependencyUpdater:
                     result = await response.json()
                     return result.get("result") == "ok"
                 else:
-                    logger.error(
-                        f"Fehler beim Update der Automation: {response.status}"
-                    )
+                    logger.error(f"Fehler beim Update der Automation: {response.status}")
                     return False
 
     async def update_automation_entities(
@@ -215,9 +192,7 @@ class DependencyUpdater:
         new_entity_id: str,
     ) -> bool:
         """Aktualisiere Entity in einer Automation"""
-        logger.debug(
-            f"Fetching config for automation {automation_id} (numeric: {automation_numeric_id})"
-        )
+        logger.debug(f"Fetching config for automation {automation_id} (numeric: {automation_numeric_id})")
         config = await self.get_automation_config(automation_numeric_id)
         if not config:
             logger.error(f"Could not fetch config for automation {automation_id}")
@@ -228,9 +203,7 @@ class DependencyUpdater:
         changed = self.replace_entity_in_dict(config, old_entity_id, new_entity_id)
 
         if changed:
-            logger.info(
-                f"Aktualisiere Automation {automation_id}: {old_entity_id} -> {new_entity_id}"
-            )
+            logger.info(f"Aktualisiere Automation {automation_id}: {old_entity_id} -> {new_entity_id}")
             return await self.update_automation_config(automation_numeric_id, config)
         else:
             logger.debug(f"No changes needed for automation {automation_id}")
@@ -238,14 +211,12 @@ class DependencyUpdater:
         return False
 
     # ===== MAIN UPDATE =====
-    async def update_all_dependencies(
-        self, old_entity_id: str, new_entity_id: str
-    ) -> Dict[str, Any]:
+    async def update_all_dependencies(self, old_entity_id: str, new_entity_id: str) -> Dict[str, List[str]]:
         """Aktualisiere alle Dependencies"""
-        logger.info(f"=== DependencyUpdater.update_all_dependencies called ===")
+        logger.info("=== DependencyUpdater.update_all_dependencies called ===")
         logger.info(f"Old entity: {old_entity_id}, New entity: {new_entity_id}")
 
-        results: Dict[str, Any] = {
+        results = {
             "scenes": {"success": [], "failed": []},
             "scripts": {"success": [], "failed": []},
             "automations": {"success": [], "failed": []},
@@ -258,9 +229,7 @@ class DependencyUpdater:
         logger.info(f"Got {len(states)} states")
 
         # Count automations for debugging
-        automation_count = sum(
-            1 for s in states if s["entity_id"].startswith("automation.")
-        )
+        automation_count = sum(1 for s in states if s["entity_id"].startswith("automation."))
         logger.info(f"Found {automation_count} automations in states")
 
         for state in states:
@@ -288,9 +257,7 @@ class DependencyUpdater:
                 # Prüfe ob Entity im Script verwendet wird
                 state_str = json.dumps(attributes)
                 if old_entity_id in state_str:
-                    success = await self.update_script_entities(
-                        entity_id, old_entity_id, new_entity_id
-                    )
+                    success = await self.update_script_entities(entity_id, old_entity_id, new_entity_id)
                     if success:
                         results["scripts"]["success"].append(entity_id)
                         results["total_success"] += 1
@@ -305,9 +272,7 @@ class DependencyUpdater:
 
         # Handle automations via REST API
         logger.info("Checking automations via REST API...")
-        automation_states = [
-            s for s in states if s["entity_id"].startswith("automation.")
-        ]
+        automation_states = [s for s in states if s["entity_id"].startswith("automation.")]
         logger.info(f"Found {len(automation_states)} automations to check")
 
         for automation_state in automation_states:
@@ -320,9 +285,7 @@ class DependencyUpdater:
                 if config:
                     config_str = json.dumps(config)
                     if old_entity_id in config_str:
-                        logger.info(
-                            f"Found automation {automation_entity_id} using {old_entity_id}"
-                        )
+                        logger.info(f"Found automation {automation_entity_id} using {old_entity_id}")
                         success = await self.update_automation_entities(
                             automation_entity_id,
                             automation_numeric_id,
@@ -330,19 +293,13 @@ class DependencyUpdater:
                             new_entity_id,
                         )
                         if success:
-                            results["automations"]["success"].append(
-                                automation_entity_id
-                            )
+                            results["automations"]["success"].append(automation_entity_id)
                             results["total_success"] += 1
                         else:
-                            results["automations"]["failed"].append(
-                                automation_entity_id
-                            )
+                            results["automations"]["failed"].append(automation_entity_id)
                             results["total_failed"] += 1
                 else:
-                    logger.debug(
-                        f"Could not fetch config for automation {automation_entity_id}"
-                    )
+                    logger.debug(f"Could not fetch config for automation {automation_entity_id}")
             else:
                 logger.debug(f"Automation {automation_entity_id} has no numeric ID")
 
@@ -351,8 +308,8 @@ class DependencyUpdater:
 
 async def main():
     """Test des Dependency Updaters"""
-    base_url = os.getenv("HA_URL", "")
-    token = os.getenv("HA_TOKEN", "")
+    base_url = os.getenv("HA_URL")
+    token = os.getenv("HA_TOKEN")
 
     updater = DependencyUpdater(base_url, token)
 
@@ -370,7 +327,7 @@ async def main():
 
     # Scenes
     if results["scenes"]["success"] or results["scenes"]["failed"]:
-        print(f"\nSCENES:")
+        print("\nSCENES:")
         for scene in results["scenes"]["success"]:
             print(f"  ✓ {scene}")
         for scene in results["scenes"]["failed"]:
@@ -378,7 +335,7 @@ async def main():
 
     # Scripts
     if results["scripts"]["success"] or results["scripts"]["failed"]:
-        print(f"\nSCRIPTS:")
+        print("\nSCRIPTS:")
         for script in results["scripts"]["success"]:
             print(f"  ✓ {script}")
         for script in results["scripts"]["failed"]:
@@ -386,16 +343,14 @@ async def main():
 
     # Automations
     if results["automations"]["success"] or results["automations"]["failed"]:
-        print(f"\nAUTOMATIONS:")
+        print("\nAUTOMATIONS:")
         for auto in results["automations"]["success"]:
             print(f"  ✓ {auto}")
         for auto in results["automations"]["failed"]:
             print(f"  ✗ {auto}")
 
     print(f"\n{'='*60}")
-    print(
-        f"Gesamt: {results['total_success']} erfolgreich, {results['total_failed']} fehlgeschlagen"
-    )
+    print(f"Gesamt: {results['total_success']} erfolgreich, {results['total_failed']} fehlgeschlagen")
 
 
 if __name__ == "__main__":

@@ -1,9 +1,6 @@
-import json
 import logging
-import re
-from typing import Any, Dict, List, Set
+from typing import Any, Dict, List
 
-import aiohttp
 from ha_websocket import HomeAssistantWebSocket
 
 logger = logging.getLogger(__name__)
@@ -14,7 +11,7 @@ class DependencyScanner:
         self.ws = websocket
 
     async def find_entity_references(self, entity_id: str) -> Dict[str, List[str]]:
-        references: Dict[str, List[str]] = {
+        references = {
             "automations": [],
             "scripts": [],
             "scenes": [],
@@ -25,9 +22,7 @@ class DependencyScanner:
         automations = await self._get_automations()
         for automation in automations:
             if self._entity_in_automation(entity_id, automation):
-                automation_id = automation.get("entity_id", automation.get("id"))
-                if automation_id:
-                    references["automations"].append(automation_id)
+                references["automations"].append(automation.get("entity_id", automation.get("id")))
 
         scripts = await self._get_scripts()
         for script_id, script_data in scripts.items():
@@ -89,11 +84,7 @@ class DependencyScanner:
             for key, value in config.items():
                 if key == "entity_id" and value == entity_id:
                     return True
-                if (
-                    key == "entity_id"
-                    and isinstance(value, list)
-                    and entity_id in value
-                ):
+                if key == "entity_id" and isinstance(value, list) and entity_id in value:
                     return True
                 if self._entity_in_config(entity_id, value):
                     return True
@@ -106,18 +97,14 @@ class DependencyScanner:
 
         return False
 
-    async def update_entity_references(
-        self, old_entity_id: str, new_entity_id: str
-    ) -> Dict[str, int]:
+    async def update_entity_references(self, old_entity_id: str, new_entity_id: str) -> Dict[str, int]:
         updates = {"automations": 0, "scripts": 0, "scenes": 0}
 
         references = await self.find_entity_references(old_entity_id)
 
         for automation_id in references["automations"]:
             try:
-                await self._update_automation(
-                    automation_id, old_entity_id, new_entity_id
-                )
+                await self._update_automation(automation_id, old_entity_id, new_entity_id)
                 updates["automations"] += 1
             except Exception as e:
                 logger.debug(f"Failed to update automation {automation_id}: {e}")
@@ -134,9 +121,7 @@ class DependencyScanner:
 
         return updates
 
-    async def _update_automation(
-        self, automation_id: str, old_entity_id: str, new_entity_id: str
-    ):
+    async def _update_automation(self, automation_id: str, old_entity_id: str, new_entity_id: str):
         """Update automation configuration with new entity ID"""
         # Hole aktuelle Automation Config
         msg_id = await self.ws._send_message(
@@ -156,9 +141,7 @@ class DependencyScanner:
         config = response.get("result", {})
 
         # Replace entity_id in the config
-        updated_config = self._replace_entity_in_config(
-            config, old_entity_id, new_entity_id
-        )
+        updated_config = self._replace_entity_in_config(config, old_entity_id, new_entity_id)
 
         # Update the automation
         msg_id = await self.ws._send_message(
@@ -178,9 +161,7 @@ class DependencyScanner:
 
         logger.info(f"Successfully updated automation {automation_id}")
 
-    async def scan_all_dependencies(
-        self, entity_ids: List[str]
-    ) -> Dict[str, Dict[str, List[str]]]:
+    async def scan_all_dependencies(self, entity_ids: List[str]) -> Dict[str, Dict[str, List[str]]]:
         all_dependencies = {}
 
         for entity_id in entity_ids:
@@ -192,9 +173,7 @@ class DependencyScanner:
 
         return all_dependencies
 
-    def _replace_entity_in_config(
-        self, config: Any, old_entity_id: str, new_entity_id: str
-    ) -> Any:
+    def _replace_entity_in_config(self, config: Any, old_entity_id: str, new_entity_id: str) -> Any:
         """Recursively replace entity IDs in configuration"""
         if isinstance(config, dict):
             new_config = {}
@@ -203,21 +182,14 @@ class DependencyScanner:
                     if isinstance(value, str) and value == old_entity_id:
                         new_config[key] = new_entity_id
                     elif isinstance(value, list):
-                        new_config[key] = [
-                            new_entity_id if e == old_entity_id else e for e in value
-                        ]  # type: ignore[assignment]
+                        new_config[key] = [new_entity_id if e == old_entity_id else e for e in value]
                     else:
                         new_config[key] = value
                 else:
-                    new_config[key] = self._replace_entity_in_config(
-                        value, old_entity_id, new_entity_id
-                    )
+                    new_config[key] = self._replace_entity_in_config(value, old_entity_id, new_entity_id)
             return new_config
         elif isinstance(config, list):
-            return [
-                self._replace_entity_in_config(item, old_entity_id, new_entity_id)
-                for item in config
-            ]
+            return [self._replace_entity_in_config(item, old_entity_id, new_entity_id) for item in config]
         elif isinstance(config, str):
             # Be careful with string replacements in templates!
             if config == old_entity_id:
@@ -244,9 +216,7 @@ class DependencyScanner:
 
         return updated
 
-    async def _update_script(
-        self, script_id: str, old_entity_id: str, new_entity_id: str
-    ):
+    async def _update_script(self, script_id: str, old_entity_id: str, new_entity_id: str):
         """Update script configuration with new entity ID"""
         script_name = script_id.replace("script.", "")
 
@@ -256,9 +226,7 @@ class DependencyScanner:
             raise Exception(f"Script {script_name} not found")
 
         # Update Config
-        updated_config = self._replace_entity_in_config(
-            scripts[script_name], old_entity_id, new_entity_id
-        )
+        updated_config = self._replace_entity_in_config(scripts[script_name], old_entity_id, new_entity_id)
 
         # Speichere updated scripts
         msg_id = await self.ws._send_message(
@@ -292,9 +260,7 @@ class DependencyScanner:
 
         return updated
 
-    async def _update_scene(
-        self, scene_id: str, old_entity_id: str, new_entity_id: str
-    ):
+    async def _update_scene(self, scene_id: str, old_entity_id: str, new_entity_id: str):
         """Update scene configuration with new entity ID"""
         scene_name = scene_id.replace("scene.", "")
 
@@ -304,9 +270,7 @@ class DependencyScanner:
             raise Exception(f"Scene {scene_name} not found")
 
         # Update Config
-        updated_config = self._replace_entity_in_config(
-            scenes[scene_name], old_entity_id, new_entity_id
-        )
+        updated_config = self._replace_entity_in_config(scenes[scene_name], old_entity_id, new_entity_id)
 
         # Speichere updated scene
         msg_id = await self.ws._send_message(

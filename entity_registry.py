@@ -1,6 +1,5 @@
-import asyncio
 import logging
-from typing import Any, Dict, List, Optional, Set
+from typing import Any, Dict, List, Optional
 
 from ha_websocket import HomeAssistantWebSocket
 from label_registry import LabelRegistry
@@ -42,7 +41,7 @@ class EntityRegistry:
         if name:
             message["name"] = name
         if labels is not None:
-            message["labels"] = list(labels) if isinstance(labels, set) else labels  # type: ignore[assignment]
+            message["labels"] = labels
         if disabled_by is not None:
             message["disabled_by"] = disabled_by
 
@@ -63,9 +62,7 @@ class EntityRegistry:
         new_entity_id: str,
         friendly_name: Optional[str] = None,
     ) -> Dict[str, Any]:
-        return await self.update_entity(
-            entity_id=old_entity_id, new_entity_id=new_entity_id, name=friendly_name
-        )
+        return await self.update_entity(entity_id=old_entity_id, new_entity_id=new_entity_id, name=friendly_name)
 
     async def add_labels(self, entity_id: str, labels: List[str]) -> Dict[str, Any]:
         # Stelle sicher, dass alle Labels existieren
@@ -75,9 +72,7 @@ class EntityRegistry:
 
         # Hole aktuelle Entity-Informationen direkt von Home Assistant
         try:
-            msg_id = await self.ws._send_message(
-                {"type": "config/entity_registry/get", "entity_id": entity_id}
-            )
+            msg_id = await self.ws._send_message({"type": "config/entity_registry/get", "entity_id": entity_id})
 
             response = await self.ws._receive_message()
             while response.get("id") != msg_id:
@@ -87,23 +82,19 @@ class EntityRegistry:
                 entity = response.get("result", {})
                 existing_labels = entity.get("labels", [])
                 # Filtere leere Labels heraus
-                existing_labels = [l for l in existing_labels if l and l.strip()]
+                existing_labels = [label for label in existing_labels if label and label.strip()]
                 # Füge zu existierenden Labels hinzu
                 new_labels = list(set(existing_labels + labels))
                 # Nochmal filtern um sicherzustellen
-                new_labels = [l for l in new_labels if l and l.strip()]
+                new_labels = [label for label in new_labels if label and label.strip()]
             else:
                 # Wenn Entity nicht gefunden, setze Labels trotzdem
-                logger.warning(
-                    f"Could not get entity {entity_id}, setting labels directly"
-                )
-                new_labels = [l for l in labels if l and l.strip()]
+                logger.warning(f"Could not get entity {entity_id}, setting labels directly")
+                new_labels = [label for label in labels if label and label.strip()]
 
         except Exception as e:
-            logger.warning(
-                f"Error getting entity {entity_id}: {e}, setting labels directly"
-            )
-            new_labels = [l for l in labels if l and l.strip()]
+            logger.warning(f"Error getting entity {entity_id}: {e}, setting labels directly")
+            new_labels = [label for label in labels if label and label.strip()]
 
         return await self.update_entity(entity_id=entity_id, labels=new_labels)
 
@@ -111,39 +102,19 @@ class EntityRegistry:
         return await self.update_entity(entity_id=entity_id, disabled_by=None)
 
     def get_disabled_entities(self) -> List[Dict[str, Any]]:
-        return [
-            entity
-            for entity in self.entities.values()
-            if entity.get("disabled_by") is not None
-        ]
+        return [entity for entity in self.entities.values() if entity.get("disabled_by") is not None]
 
     def get_entities_by_domain(self, domain: str) -> List[Dict[str, Any]]:
-        return [
-            entity
-            for entity_id, entity in self.entities.items()
-            if entity_id.startswith(f"{domain}.")
-        ]
+        return [entity for entity_id, entity in self.entities.items() if entity_id.startswith(f"{domain}.")]
 
     def get_entities_by_room(self, room: str) -> List[Dict[str, Any]]:
-        return [
-            entity
-            for entity_id, entity in self.entities.items()
-            if f".{room}_" in entity_id
-        ]
+        return [entity for entity_id, entity in self.entities.items() if f".{room}_" in entity_id]
 
     def get_entities_with_label(self, label: str) -> List[Dict[str, Any]]:
-        return [
-            entity
-            for entity in self.entities.values()
-            if label in entity.get("labels", [])
-        ]
+        return [entity for entity in self.entities.values() if label in entity.get("labels", [])]
 
     def get_entities_without_label(self, label: str) -> List[Dict[str, Any]]:
-        return [
-            entity
-            for entity in self.entities.values()
-            if label not in entity.get("labels", [])
-        ]
+        return [entity for entity in self.entities.values() if label not in entity.get("labels", [])]
 
 
 class DeviceRegistry:

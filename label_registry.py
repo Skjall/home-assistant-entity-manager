@@ -55,9 +55,7 @@ class LabelRegistry:
 
         return response.get("result", {})
 
-    async def ensure_label_exists(
-        self, label_id: str, name: Optional[str] = None
-    ) -> bool:
+    async def ensure_label_exists(self, label_id: str, name: Optional[str] = None) -> bool:
         """Stelle sicher, dass ein Label existiert. Erstelle es wenn nötig."""
         # Lade aktuelle Labels
         labels = await self.list_labels()
@@ -73,9 +71,7 @@ class LabelRegistry:
                     # Kapitalisiere die label_id als Fallback für den Namen
                     name = label_id.capitalize()
 
-                await self.create_label(
-                    label_id=label_id, name=name, color="primary"  # Standard-Farbe
-                )
+                await self.create_label(label_id=label_id, name=name, color="primary")  # Standard-Farbe
                 logger.info(f"Label '{label_id}' erfolgreich erstellt")
                 return True
             except Exception as e:

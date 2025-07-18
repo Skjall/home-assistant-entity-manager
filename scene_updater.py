@@ -3,13 +3,12 @@
 Scene Updater - Aktualisiert Entity IDs in Scenes über die REST API
 """
 import asyncio
-import json
 import logging
 import os
-from typing import Any, Dict, List, Optional
 
 import aiohttp
 from dotenv import load_dotenv
+
 from ha_client import HomeAssistantClient
 
 logging.basicConfig(level=logging.INFO)
@@ -46,7 +45,7 @@ class SceneUpdater:
 
             if not scene_numeric_id:
                 logger.error(f"Scene {scene_id} nicht gefunden oder hat keine ID")
-                return {}
+                return None
 
             # Hole Scene Config
             url = f"{self.base_url}/api/config/scene/config/{scene_numeric_id}"
@@ -54,10 +53,8 @@ class SceneUpdater:
                 if response.status == 200:
                     return await response.json()
                 else:
-                    logger.error(
-                        f"Fehler beim Abrufen der Scene {scene_id}: {response.status}"
-                    )
-                    return {}
+                    logger.error(f"Fehler beim Abrufen der Scene {scene_id}: {response.status}")
+                    return None
 
     async def update_scene_config(self, scene_numeric_id: str, config: dict) -> bool:
         """Aktualisiere eine Scene Konfiguration"""
@@ -72,9 +69,7 @@ class SceneUpdater:
                     logger.error(f"Fehler beim Update der Scene: {response.status}")
                     return False
 
-    async def update_entity_in_scene(
-        self, scene_id: str, old_entity_id: str, new_entity_id: str
-    ) -> bool:
+    async def update_entity_in_scene(self, scene_id: str, old_entity_id: str, new_entity_id: str) -> bool:
         """Ersetze eine Entity ID in einer Scene"""
         # Hole aktuelle Config
         config = await self.get_scene_config(scene_id)
@@ -92,20 +87,16 @@ class SceneUpdater:
         entity_config = config["entities"].pop(old_entity_id)
         config["entities"][new_entity_id] = entity_config
 
-        logger.info(
-            f"Aktualisiere Scene {scene_id}: {old_entity_id} -> {new_entity_id}"
-        )
+        logger.info(f"Aktualisiere Scene {scene_id}: {old_entity_id} -> {new_entity_id}")
 
         # Update die Scene
         return await self.update_scene_config(scene_numeric_id, config)
 
-    async def update_entity_in_all_scenes(
-        self, old_entity_id: str, new_entity_id: str
-    ) -> dict:
+    async def update_entity_in_all_scenes(self, old_entity_id: str, new_entity_id: str) -> dict:
         """Aktualisiere eine Entity ID in allen Scenes"""
         client = HomeAssistantClient(self.base_url, self.token)
 
-        results: Dict[str, List[str]] = {"success": [], "failed": [], "skipped": []}
+        results = {"success": [], "failed": [], "skipped": []}
 
         async with client:
             states = await client.get_states()
@@ -117,9 +108,7 @@ class SceneUpdater:
 
                     if old_entity_id in entity_ids:
                         # Diese Scene muss aktualisiert werden
-                        success = await self.update_entity_in_scene(
-                            state["entity_id"], old_entity_id, new_entity_id
-                        )
+                        success = await self.update_entity_in_scene(state["entity_id"], old_entity_id, new_entity_id)
 
                         if success:
                             results["success"].append(state["entity_id"])
@@ -130,8 +119,8 @@ class SceneUpdater:
 
 
 async def main():
-    base_url = os.getenv("HA_URL", "")
-    token = os.getenv("HA_TOKEN", "")
+    base_url = os.getenv("HA_URL")
+    token = os.getenv("HA_TOKEN")
 
     updater = SceneUpdater(base_url, token)
 

@@ -47,9 +47,7 @@ class DeviceRegistry:
     async def get_device(self, device_id: str) -> Optional[Dict[str, Any]]:
         """Holt Geräteinformationen"""
         try:
-            msg_id = await self.ws._send_message(
-                {"type": "config/device_registry/list"}
-            )
+            msg_id = await self.ws._send_message({"type": "config/device_registry/list"})
 
             response = await self.ws._receive_message()
             while response.get("id") != msg_id:

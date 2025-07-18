@@ -4,7 +4,6 @@ Naming Override System - Speichert benutzerdefinierte Namen basierend auf Regist
 """
 import json
 import logging
-import os
 from pathlib import Path
 from typing import Any, Dict, Optional
 
@@ -26,7 +25,7 @@ class NamingOverrides:
                 logger.error(f"Fehler beim Laden der Overrides: {e}")
 
         # Default-Struktur
-        data: Dict[str, Any] = {"entities": {}, "devices": {}, "areas": {}}
+        data = {"entities": {}, "devices": {}, "areas": {}}
         # Ensure areas key exists in existing data
         if self.storage_path.exists():
             try:
@@ -35,7 +34,7 @@ class NamingOverrides:
                     if "areas" not in existing_data:
                         existing_data["areas"] = {}
                     return existing_data
-            except Exception:
+            except (json.JSONDecodeError, IOError):
                 pass
         return data
 
@@ -52,9 +51,7 @@ class NamingOverrides:
 
     # === Entity Overrides ===
 
-    def set_entity_override(
-        self, registry_id: str, name: str, type_override: Optional[str] = None
-    ) -> None:
+    def set_entity_override(self, registry_id: str, name: str, type_override: Optional[str] = None) -> None:
         """Setze Entity Name Override"""
         self.data["entities"][registry_id] = {"name": name}
         if type_override:
