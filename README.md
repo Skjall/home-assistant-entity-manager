@@ -1,29 +1,40 @@
 # Home Assistant Entity Manager
 
+[![Beta](https://img.shields.io/badge/Status-Beta-yellow.svg)](https://github.com/Skjall/home-assistant-entity-manager)
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://github.com/hacs/integration)
-[![GitHub Release](https://img.shields.io/github/release/jangrossheim/home-assistant-entity-manager.svg?style=flat-square)](https://github.com/jangrossheim/home-assistant-entity-manager/releases)
-[![License](https://img.shields.io/github/license/jangrossheim/home-assistant-entity-manager.svg?style=flat-square)](LICENSE)
+[![GitHub Release](https://img.shields.io/github/release/Skjall/home-assistant-entity-manager.svg?style=flat-square)](https://github.com/Skjall/home-assistant-entity-manager/releases)
+[![License](https://img.shields.io/github/license/Skjall/home-assistant-entity-manager.svg?style=flat-square)](LICENSE)
 
-A Home Assistant integration for standardizing and managing entity names according to a consistent naming convention. Available through HACS (Home Assistant Community Store).
+A Home Assistant integration for standardizing and managing entity names according to a consistent, logical naming convention. Available through HACS (Home Assistant Community Store).
+
+> **⚠️ Beta Software**: This integration is currently in beta testing. While core functionality is stable, you may encounter bugs. Please report any issues on the [GitHub Issues](https://github.com/Skjall/home-assistant-entity-manager/issues) page.
 
 ## Features
 
 - **Batch Entity Renaming**: Rename multiple entities according to a standardized pattern
-- **German Naming Convention**: Follows the pattern `{room}.{device_type}.{location/name}`
-- **Room Normalization**: Automatically normalizes room names (e.g., `buro` → `buero`)
+- **Logical Naming Convention**: Follows the pattern `{room}.{device_type}.{location/name}`
+- **Character Normalization**: Automatically normalizes special characters for entity IDs (e.g., `küche` → `kuche`, `büro` → `buro`)
 - **Dependency Tracking**: Finds and updates entity references in automations and scenes
 - **Label Management**: Track entity quality and processing status
 - **Web Interface**: Visualize and manage entities through an intuitive UI
 - **Safe Operations**: Dry-run mode and comprehensive validation before changes
 
+## Requirements
+
+- Home Assistant 2025.7.2 or newer
+- Python 3.12 or 3.13
+
 ## Installation
 
 ### Via HACS (Recommended)
 
+[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=Skjall&repository=home-assistant-entity-manager&category=integration)
+
+#### Manual steps:
 1. Open HACS in your Home Assistant instance
 2. Click on "Integrations"
 3. Click the three dots in the top right corner and select "Custom repositories"
-4. Add this repository URL: `https://github.com/jangrossheim/home-assistant-entity-manager`
+4. Add this repository URL: `https://github.com/Skjall/home-assistant-entity-manager`
 5. Select "Integration" as the category
 6. Click "Add"
 7. Search for "Entity Manager" and install it
@@ -72,9 +83,24 @@ data:
   dry_run: false  # Set to true for preview only
 ```
 
-### Using the Web Interface (Coming Soon)
+### Using the Web Interface
 
-The integration will provide a panel in the Home Assistant UI for visual entity management.
+After installation, the Entity Manager provides a web interface panel in Home Assistant:
+
+1. Navigate to the sidebar in Home Assistant
+2. Click on "Entity Manager" (admin access required)
+3. Select an area from the dropdown
+4. Optionally filter by domain (light, switch, sensor, etc.)
+5. Preview entities that need renaming
+6. Select entities to process
+7. Click "Process X entities" to apply changes
+
+The web interface features:
+- **Area-based navigation**: Browse entities organized by room/area
+- **Domain filtering**: Filter entities by type
+- **Visual indicators**: See which entities need renaming
+- **Batch operations**: Select and rename multiple entities at once
+- **Skip maintained**: Option to hide entities already processed
 
 ## Naming Convention
 

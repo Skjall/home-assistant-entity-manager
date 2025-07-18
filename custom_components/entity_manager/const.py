@@ -1,4 +1,5 @@
 """Constants for the Entity Manager integration."""
+
 from typing import Final
 
 DOMAIN: Final = "entity_manager"

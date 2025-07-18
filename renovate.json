@@ -1,8 +1,10 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": [
-    "config:recommended"
-  ],
+  "extends": ["config:recommended"],
+  "baseBranches": ["next-release"],
+  "constraints": {
+    "python": "3.10"
+  },
   "python": {
     "packageRules": [
       {
@@ -11,6 +13,32 @@
       }
     ]
   },
+  "packageRules": [
+    {
+      "matchFiles": ["requirements-test.txt"],
+      "matchPackageNames": ["pytest-homeassistant-custom-component"],
+      "allowedVersions": "<0.13.46",
+      "description": "pytest-homeassistant-custom-component >=0.13.46 requires Python 3.11+"
+    },
+    {
+      "matchFiles": ["requirements-test.txt"],
+      "matchPackageNames": ["pytest-asyncio"],
+      "allowedVersions": "0.20.3",
+      "description": "Pinned due to pytest-homeassistant-custom-component dependency"
+    },
+    {
+      "matchFiles": ["requirements-test.txt"],
+      "matchPackageNames": ["pytest-cov"],
+      "allowedVersions": "3.0.0",
+      "description": "Pinned due to pytest-homeassistant-custom-component dependency"
+    },
+    {
+      "matchFiles": ["requirements-test.txt"],
+      "matchPackageNames": ["pytest"],
+      "allowedVersions": "7.3.1",
+      "description": "Pinned due to pytest-homeassistant-custom-component dependency"
+    }
+  ],
   "vulnerabilityAlerts": {
     "enabled": true
   },
@@ -18,5 +46,5 @@
   "prConcurrentLimit": 2,
   "labels": ["dependencies"],
   "assignees": ["@renovate-bot"],
-  "reviewers": ["jangrossheim"]
+  "reviewers": ["Skjall"]
 }
