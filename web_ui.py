@@ -224,7 +224,11 @@ async def load_areas_and_entities():
 @app.route("/")
 def index():
     """Hauptseite"""
-    return render_template("index.html")
+    import time
+
+    # Use timestamp for cache busting
+    version = str(int(time.time()))
+    return render_template("index.html", version=version)
 
 
 @app.route("/test")
