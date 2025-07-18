@@ -26,7 +26,7 @@ class NamingOverrides:
                 logger.error(f"Fehler beim Laden der Overrides: {e}")
 
         # Default-Struktur
-        data = {"entities": {}, "devices": {}, "areas": {}}
+        data: Dict[str, Any] = {"entities": {}, "devices": {}, "areas": {}}
         # Ensure areas key exists in existing data
         if self.storage_path.exists():
             try:
@@ -35,7 +35,7 @@ class NamingOverrides:
                     if "areas" not in existing_data:
                         existing_data["areas"] = {}
                     return existing_data
-            except:
+            except Exception:
                 pass
         return data
 

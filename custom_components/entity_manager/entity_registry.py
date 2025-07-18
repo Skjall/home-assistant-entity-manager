@@ -42,7 +42,7 @@ class EntityRegistry:
         if name:
             message["name"] = name
         if labels is not None:
-            message["labels"] = labels
+            message["labels"] = list(labels) if isinstance(labels, set) else labels  # type: ignore[assignment]
         if disabled_by is not None:
             message["disabled_by"] = disabled_by
 

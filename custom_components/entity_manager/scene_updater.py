@@ -6,6 +6,7 @@ import asyncio
 import json
 import logging
 import os
+from typing import Any, Dict, List, Optional
 
 import aiohttp
 from dotenv import load_dotenv
@@ -45,7 +46,7 @@ class SceneUpdater:
 
             if not scene_numeric_id:
                 logger.error(f"Scene {scene_id} nicht gefunden oder hat keine ID")
-                return None
+                return {}
 
             # Hole Scene Config
             url = f"{self.base_url}/api/config/scene/config/{scene_numeric_id}"
@@ -56,7 +57,7 @@ class SceneUpdater:
                     logger.error(
                         f"Fehler beim Abrufen der Scene {scene_id}: {response.status}"
                     )
-                    return None
+                    return {}
 
     async def update_scene_config(self, scene_numeric_id: str, config: dict) -> bool:
         """Aktualisiere eine Scene Konfiguration"""
@@ -104,7 +105,7 @@ class SceneUpdater:
         """Aktualisiere eine Entity ID in allen Scenes"""
         client = HomeAssistantClient(self.base_url, self.token)
 
-        results = {"success": [], "failed": [], "skipped": []}
+        results: Dict[str, List[str]] = {"success": [], "failed": [], "skipped": []}
 
         async with client:
             states = await client.get_states()
@@ -129,8 +130,8 @@ class SceneUpdater:
 
 
 async def main():
-    base_url = os.getenv("HA_URL")
-    token = os.getenv("HA_TOKEN")
+    base_url = os.getenv("HA_URL", "")
+    token = os.getenv("HA_TOKEN", "")
 
     updater = SceneUpdater(base_url, token)
 

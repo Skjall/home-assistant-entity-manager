@@ -14,7 +14,7 @@ class DependencyScanner:
         self.ws = websocket
 
     async def find_entity_references(self, entity_id: str) -> Dict[str, List[str]]:
-        references = {
+        references: Dict[str, List[str]] = {
             "automations": [],
             "scripts": [],
             "scenes": [],
@@ -25,9 +25,9 @@ class DependencyScanner:
         automations = await self._get_automations()
         for automation in automations:
             if self._entity_in_automation(entity_id, automation):
-                references["automations"].append(
-                    automation.get("entity_id", automation.get("id"))
-                )
+                automation_id = automation.get("entity_id", automation.get("id"))
+                if automation_id:
+                    references["automations"].append(automation_id)
 
         scripts = await self._get_scripts()
         for script_id, script_data in scripts.items():
@@ -205,7 +205,7 @@ class DependencyScanner:
                     elif isinstance(value, list):
                         new_config[key] = [
                             new_entity_id if e == old_entity_id else e for e in value
-                        ]
+                        ]  # type: ignore[assignment]
                     else:
                         new_config[key] = value
                 else:

@@ -5,11 +5,11 @@ from __future__ import annotations
 import logging
 from typing import Any, Dict, Optional
 
-import voluptuous as vol
 from homeassistant import config_entries
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResult
 from homeassistant.exceptions import HomeAssistantError
+import voluptuous as vol
 
 from .const import DOMAIN, ERROR_INVALID_CONFIG
 
@@ -50,7 +50,7 @@ async def validate_input(hass: HomeAssistant, data: Dict[str, Any]) -> Dict[str,
     return {"title": name}
 
 
-class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
+class ConfigFlow(config_entries.ConfigFlow):  # type: ignore[call-arg]
     """Handle a config flow for Entity Manager.
 
     This class manages the configuration flow for the Entity Manager integration,
@@ -58,6 +58,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """
 
     VERSION = 1
+    DOMAIN = DOMAIN
 
     def __init__(self) -> None:
         """Initialize the config flow."""

@@ -55,7 +55,6 @@ jobs:
       - name: Type check with mypy
         run: |
           mypy custom_components
-        continue-on-error: true
 
       - name: Test with pytest
         run: |

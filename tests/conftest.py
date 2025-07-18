@@ -1,9 +1,25 @@
 """Global fixtures for Entity Manager tests."""
 
+import os
+from pathlib import Path
+import sys
 from unittest.mock import MagicMock, patch
 
-import pytest
 from homeassistant.core import HomeAssistant
+import pytest
+from pytest_homeassistant_custom_component.common import MockConfigEntry
+
+# Add the custom_components directory to the path so tests can find it
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+
+# This is required for pytest-homeassistant-custom-component
+pytest_plugins = "pytest_homeassistant_custom_component.common"
+
+
+@pytest.fixture(autouse=True)
+def auto_enable_custom_integrations(enable_custom_integrations):
+    """Enable custom integrations for all tests."""
+    yield
 
 
 @pytest.fixture

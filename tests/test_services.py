@@ -2,9 +2,9 @@
 
 from unittest.mock import AsyncMock, MagicMock, patch
 
-import pytest
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
+import pytest
 
 from custom_components.entity_manager import async_setup_services
 from custom_components.entity_manager.const import (
@@ -20,7 +20,14 @@ from custom_components.entity_manager.const import (
 def mock_hass():
     """Create a mock Home Assistant instance."""
     hass = MagicMock(spec=HomeAssistant)
-    hass.data = {DOMAIN: {"test_entry": {"naming_overrides": MagicMock()}}}
+
+    # Create a proper naming overrides mock
+    naming_overrides = MagicMock()
+    naming_overrides.get_area_override.return_value = None
+    naming_overrides.get_device_override.return_value = None
+    naming_overrides.get_entity_override.return_value = None
+
+    hass.data = {DOMAIN: {"test_entry": {"naming_overrides": naming_overrides}}}
     hass.services = MagicMock()
     hass.helpers = MagicMock()
     return hass
@@ -74,6 +81,10 @@ def mock_registries(mock_hass):
     # Mock area registry
     area_reg = MagicMock()
     area_reg.areas = {"area1": MagicMock(id="area1", name="Living Room")}
+    area_reg.areas["area1"].aliases = set()
+
+    # Mock device registry methods
+    device_reg.async_get = lambda did: device_reg.devices.get(did)
 
     return entity_reg, device_reg, area_reg
 
@@ -128,6 +139,9 @@ async def test_rename_entity_service(mock_hass, mock_registries):
         "custom_components.entity_manager.dr.async_get", return_value=device_reg
     ), patch(
         "custom_components.entity_manager.ar.async_get", return_value=area_reg
+    ), patch(
+        "custom_components.entity_manager.EntityRestructurer.generate_new_entity_id",
+        return_value=("light.living_room_test", "Living Room Test Light"),
     ):
 
         await async_setup_services(mock_hass)
@@ -145,8 +159,8 @@ async def test_rename_entity_service(mock_hass, mock_registries):
 
         assert result["success"] is True
         assert result["old_id"] == "light.test_light"
-        assert "new_id" in result
-        assert "friendly_name" in result
+        assert result["new_id"] == "light.living_room_test"
+        assert result["friendly_name"] == "Living Room Test Light"
 
         # Verify update was called
         assert entity_reg.async_update_entity.called
@@ -171,6 +185,9 @@ async def test_rename_bulk_service(mock_hass, mock_registries):
         "custom_components.entity_manager.dr.async_get", return_value=device_reg
     ), patch(
         "custom_components.entity_manager.ar.async_get", return_value=area_reg
+    ), patch(
+        "custom_components.entity_manager.EntityRestructurer.generate_new_entity_id",
+        return_value=("light.living_room_test", "Living Room Test Light"),
     ):
 
         await async_setup_services(mock_hass)
@@ -221,6 +238,9 @@ async def test_service_error_handling(mock_hass, mock_registries):
         "custom_components.entity_manager.dr.async_get", return_value=device_reg
     ), patch(
         "custom_components.entity_manager.ar.async_get", return_value=area_reg
+    ), patch(
+        "custom_components.entity_manager.EntityRestructurer.generate_new_entity_id",
+        return_value=("light.living_room_test", "Living Room Test Light"),
     ):
 
         await async_setup_services(mock_hass)
@@ -233,6 +253,7 @@ async def test_service_error_handling(mock_hass, mock_registries):
         call = MagicMock()
         call.data = {"entity_id": "light.test_light"}
 
+        # The service should raise HomeAssistantError when update fails
         with pytest.raises(HomeAssistantError) as exc_info:
             await rename_service(call)
 

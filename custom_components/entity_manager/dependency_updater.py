@@ -240,12 +240,12 @@ class DependencyUpdater:
     # ===== MAIN UPDATE =====
     async def update_all_dependencies(
         self, old_entity_id: str, new_entity_id: str
-    ) -> Dict[str, List[str]]:
+    ) -> Dict[str, Any]:
         """Aktualisiere alle Dependencies"""
         logger.info(f"=== DependencyUpdater.update_all_dependencies called ===")
         logger.info(f"Old entity: {old_entity_id}, New entity: {new_entity_id}")
 
-        results = {
+        results: Dict[str, Any] = {
             "scenes": {"success": [], "failed": []},
             "scripts": {"success": [], "failed": []},
             "automations": {"success": [], "failed": []},
@@ -351,8 +351,8 @@ class DependencyUpdater:
 
 async def main():
     """Test des Dependency Updaters"""
-    base_url = os.getenv("HA_URL")
-    token = os.getenv("HA_TOKEN")
+    base_url = os.getenv("HA_URL", "")
+    token = os.getenv("HA_TOKEN", "")
 
     updater = DependencyUpdater(base_url, token)
 

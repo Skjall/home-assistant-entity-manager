@@ -5,7 +5,6 @@ from __future__ import annotations
 import logging
 from typing import Any, Dict, List, Optional, Set
 
-import voluptuous as vol
 from homeassistant.components import frontend, websocket_api
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
@@ -16,11 +15,14 @@ from homeassistant.core import (
     SupportsResponse,
 )
 from homeassistant.exceptions import HomeAssistantError
-from homeassistant.helpers import area_registry as ar
-from homeassistant.helpers import config_validation as cv
-from homeassistant.helpers import device_registry as dr
-from homeassistant.helpers import entity_registry as er
+from homeassistant.helpers import (
+    area_registry as ar,
+    config_validation as cv,
+    device_registry as dr,
+    entity_registry as er,
+)
 from homeassistant.helpers.typing import ConfigType
+import voluptuous as vol
 
 from .const import (
     CONF_DRY_RUN,
@@ -171,7 +173,7 @@ async def async_setup_services(hass: HomeAssistant) -> None:
             results = []
             for entity in entities_to_analyze:
                 try:
-                    state_info = {"attributes": {}}
+                    state_info: Dict[str, Any] = {"attributes": {}}
                     new_id, friendly_name = restructurer.generate_new_entity_id(
                         entity.entity_id, state_info
                     )
@@ -234,7 +236,7 @@ async def async_setup_services(hass: HomeAssistant) -> None:
             )
 
             # Generate new ID
-            state_info = {"attributes": {}}
+            state_info: Dict[str, Any] = {"attributes": {}}
             new_id, friendly_name = restructurer.generate_new_entity_id(
                 entity_id, state_info
             )
@@ -316,7 +318,7 @@ async def async_setup_services(hass: HomeAssistant) -> None:
                 )
 
             # Process entities
-            results = {
+            results: Dict[str, Any] = {
                 "processed": [],
                 "errors": [],
                 "skipped": [],
@@ -337,7 +339,7 @@ async def async_setup_services(hass: HomeAssistant) -> None:
                         continue
 
                     # Generate new ID
-                    state_info = {"attributes": {}}
+                    state_info: Dict[str, Any] = {"attributes": {}}
                     new_id, friendly_name = restructurer.generate_new_entity_id(
                         entity.entity_id, state_info
                     )
@@ -584,7 +586,7 @@ async def async_setup_websocket_commands(hass: HomeAssistant) -> None:
 
             # Generate new ID
             try:
-                state_info = {"attributes": {}}
+                state_info: Dict[str, Any] = {"attributes": {}}
                 new_id, friendly_name = restructurer.generate_new_entity_id(
                     entity.entity_id, state_info
                 )
