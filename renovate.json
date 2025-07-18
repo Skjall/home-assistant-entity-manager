@@ -1,40 +1,61 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["config:recommended"],
-  "baseBranches": ["next-release"],
+  "extends": [
+    "config:recommended"
+  ],
+  "baseBranches": [
+    "next-release"
+  ],
   "constraints": {
     "python": "3.10"
   },
-  "python": {
-    "packageRules": [
-      {
-        "matchPackagePatterns": ["*"],
-        "groupName": "Python dependencies"
-      }
-    ]
-  },
   "packageRules": [
     {
-      "matchFiles": ["requirements-test.txt"],
-      "matchPackageNames": ["pytest-homeassistant-custom-component"],
+      "matchCategories": [
+        "python"
+      ],
+      "groupName": "Python dependencies",
+      "matchPackageNames": [
+        "*"
+      ]
+    },
+    {
+      "matchFileNames": [
+        "requirements-test.txt"
+      ],
+      "matchPackageNames": [
+        "pytest-homeassistant-custom-component"
+      ],
       "allowedVersions": "<0.13.46",
       "description": "pytest-homeassistant-custom-component >=0.13.46 requires Python 3.11+"
     },
     {
-      "matchFiles": ["requirements-test.txt"],
-      "matchPackageNames": ["pytest-asyncio"],
+      "matchFileNames": [
+        "requirements-test.txt"
+      ],
+      "matchPackageNames": [
+        "pytest-asyncio"
+      ],
       "allowedVersions": "0.20.3",
       "description": "Pinned due to pytest-homeassistant-custom-component dependency"
     },
     {
-      "matchFiles": ["requirements-test.txt"],
-      "matchPackageNames": ["pytest-cov"],
+      "matchFileNames": [
+        "requirements-test.txt"
+      ],
+      "matchPackageNames": [
+        "pytest-cov"
+      ],
       "allowedVersions": "3.0.0",
       "description": "Pinned due to pytest-homeassistant-custom-component dependency"
     },
     {
-      "matchFiles": ["requirements-test.txt"],
-      "matchPackageNames": ["pytest"],
+      "matchFileNames": [
+        "requirements-test.txt"
+      ],
+      "matchPackageNames": [
+        "pytest"
+      ],
       "allowedVersions": "7.3.1",
       "description": "Pinned due to pytest-homeassistant-custom-component dependency"
     }
@@ -44,7 +65,13 @@
   },
   "dependencyDashboard": true,
   "prConcurrentLimit": 2,
-  "labels": ["dependencies"],
-  "assignees": ["@renovate-bot"],
-  "reviewers": ["Skjall"]
+  "labels": [
+    "dependencies"
+  ],
+  "assignees": [
+    "@renovate-bot"
+  ],
+  "reviewers": [
+    "Skjall"
+  ]
 }
