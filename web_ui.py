@@ -48,7 +48,7 @@ renamer_state = {
     "areas": {},
     "entities_by_area": {},
     "proposed_changes": {},
-    "naming_overrides": NamingOverrides(),
+    "naming_overrides": NamingOverrides("/addon_configs/entity_manager/naming_overrides.json"),
 }
 
 

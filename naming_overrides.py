@@ -13,6 +13,8 @@ logger = logging.getLogger(__name__)
 class NamingOverrides:
     def __init__(self, storage_path: str = "naming_overrides.json"):
         self.storage_path = Path(storage_path)
+        # Ensure directory exists
+        self.storage_path.parent.mkdir(parents=True, exist_ok=True)
         self.data = self._load_data()
 
     def _load_data(self) -> Dict[str, Any]:
