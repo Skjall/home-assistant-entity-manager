@@ -716,7 +716,7 @@
 
                     this.loading = true;
                     this.changes = [];
-                    this.updateURL();
+                    this.saveFilters();
 
                     try {
                         const response = await fetch('api/preview', {
