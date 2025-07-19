@@ -703,7 +703,19 @@ async def _execute_changes_async():
         # Verarbeite einzelne Entities
         for old_id, (new_id, friendly_name) in selected_mapping.items():
             try:
-                logger.info(f"Processing entity: {old_id} -> {new_id}, friendly_name: {friendly_name}")
+                # Recalculate the entity name to ensure overrides are applied
+                current_state = next((s for s in states if s["entity_id"] == old_id), {})
+                if current_state:
+                    # Use restructurer to get the current naming with overrides
+                    recalculated_new_id, recalculated_friendly_name = renamer_state[
+                        "restructurer"
+                    ].generate_new_entity_id(old_id, current_state)
+                    # Use the recalculated names instead of the preview mapping
+                    new_id = recalculated_new_id
+                    friendly_name = recalculated_friendly_name
+                    logger.info(f"Recalculated entity: {old_id} -> {new_id}, friendly_name: {friendly_name}")
+                else:
+                    logger.info(f"Processing entity: {old_id} -> {new_id}, friendly_name: {friendly_name}")
 
                 # Check if entity ID or friendly name needs to be changed
                 current_states = next((s for s in states if s["entity_id"] == old_id), {})
