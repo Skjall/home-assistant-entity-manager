@@ -69,6 +69,11 @@
                         <i class="ri-home-8-line text-2xl text-blue-600"></i>
                         <h1 class="text-2xl font-bold text-gray-900">Home Assistant Entity Manager</h1>
                         <span class="text-xs bg-red-100 text-red-800 px-2 py-1 rounded-full font-medium">ALPHA</span>
+                        <button @click="window.location.reload()"
+                                class="ml-2 p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                                title="Seite neu laden">
+                            <i class="ri-refresh-line text-lg"></i>
+                        </button>
                     </div>
                     <div class="flex items-center space-x-4">
                         <div class="text-sm text-gray-600">
@@ -263,7 +268,17 @@
                                                 <div class="flex items-center space-x-3">
                                                     <i class="ri-cpu-line text-gray-600"></i>
                                                     <div>
-                                                        <h3 class="font-semibold text-gray-900" x-text="deviceGroup && deviceGroup.device ? deviceGroup.device.current_name : ''"></h3>
+                                                        <div class="flex items-center space-x-2">
+                                                            <h3 class="font-semibold text-gray-900" x-text="deviceGroup && deviceGroup.device ? deviceGroup.device.current_name : ''"></h3>
+                                                            <a x-show="deviceGroup && deviceGroup.device && deviceGroup.device.id"
+                                                               :href="'/config/devices/device/' + (deviceGroup && deviceGroup.device ? deviceGroup.device.id : '')"
+                                                               target="_blank"
+                                                               class="text-blue-600 hover:text-blue-700"
+                                                               title="Gerät in Home Assistant öffnen"
+                                                               @click.stop>
+                                                                <i class="ri-external-link-line text-sm"></i>
+                                                            </a>
+                                                        </div>
                                                         <p class="text-xs text-gray-500">
                                                             <span x-show="deviceGroup && deviceGroup.device && deviceGroup.device.manufacturer" x-text="deviceGroup && deviceGroup.device ? deviceGroup.device.manufacturer : ''"></span>
                                                             <span x-show="deviceGroup && deviceGroup.device && deviceGroup.device.model" x-text="deviceGroup && deviceGroup.device && deviceGroup.device.model ? ' • ' + deviceGroup.device.model : ''"></span>
@@ -420,8 +435,8 @@
                                                             <span class="text-xs text-gray-500">Basename:</span>
                                                             <template x-if="entity && !entity.editing">
                                                                 <code class="text-xs font-mono cursor-pointer hover:underline"
-                                                                      :class="entity ? (entity.has_override ? 'text-blue-700' : 'text-amber-700') : 'text-gray-500'"
-                                                                      x-text="entity ? (entity.has_override ? entity.override_name : getEntitySuggestion(entity)) : ''"
+                                                                      :class="entity ? (entity.has_override ? 'text-blue-700' : ((getEntitySuggestion(entity) === 'Sensor' || getEntitySuggestion(entity) === 'Enum') ? 'text-red-600' : 'text-amber-700')) : 'text-gray-500'"
+                                                                      x-text="entity ? (entity.has_override ? entity.override_name : ((getEntitySuggestion(entity) === 'Sensor' || getEntitySuggestion(entity) === 'Enum') ? '-- Klicken zum Eingeben --' : getEntitySuggestion(entity))) : ''"
                                                                       @click="startEntityEdit(entity)"></code>
                                                             </template>
                                                             <template x-if="entity && entity.editing">
@@ -437,12 +452,17 @@
                                                         </div>
                                                         
                                                         <!-- Status badges -->
-                                                        <button x-show="entity && entity.needs_rename && !entity.has_override" 
+                                                        <button x-show="entity && entity.needs_rename && !entity.has_override && getEntitySuggestion(entity) !== 'Sensor' && getEntitySuggestion(entity) !== 'Enum'" 
                                                                 @click.stop="acceptEntitySuggestion(entity)"
                                                                 class="text-xs px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 hover:bg-amber-200 transition-colors"
                                                                 title="Vorschlag übernehmen">
                                                             Vorschlag
                                                         </button>
+                                                        <span x-show="entity && entity.needs_rename && !entity.has_override && (getEntitySuggestion(entity) === 'Sensor' || getEntitySuggestion(entity) === 'Enum')" 
+                                                              class="text-xs px-1.5 py-0.5 rounded-full bg-red-100 text-red-700"
+                                                              title="Manueller Basename erforderlich">
+                                                            Eingabe erforderlich
+                                                        </span>
                                                         <span x-show="entity && entity.needs_rename && entity.has_override" 
                                                               class="text-xs px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-700">
                                                             Override
