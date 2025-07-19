@@ -353,6 +353,8 @@ async def _preview_changes_async():
     area_name = data.get("area")
     domain = data.get("domain")
     skip_reviewed = data.get("skip_reviewed", False)
+    only_changes = data.get("only_changes", False)
+    data.get("show_disabled", False)
 
     if not area_name or not domain:
         return jsonify({"error": "Area und Domain müssen angegeben werden"}), 400
@@ -508,15 +510,24 @@ async def _preview_changes_async():
         # Convert to list for frontend
         changes = []
         for device_key, device_data in devices_map.items():
-            changes.append(
-                {
-                    "device": device_data["device"],
-                    "entities": sorted(
-                        device_data["entities"],
-                        key=lambda x: (not x["needs_rename"], x["old_id"]),
-                    ),
-                }
-            )
+            # Filter entities based on settings
+            filtered_entities = device_data["entities"]
+
+            # Apply "only changes" filter
+            if only_changes:
+                filtered_entities = [e for e in filtered_entities if e["needs_rename"]]
+
+            # Skip device groups with no visible entities
+            if filtered_entities:
+                changes.append(
+                    {
+                        "device": device_data["device"],
+                        "entities": sorted(
+                            filtered_entities,
+                            key=lambda x: (not x["needs_rename"], x["old_id"]),
+                        ),
+                    }
+                )
 
         # Sort devices: first with devices, then without
         changes.sort(

@@ -84,103 +84,114 @@
 
         <!-- Fixed Top Section -->
         <div class="bg-white border-b shadow-sm">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
                 <!-- Selection Panel -->
-                <h2 class="text-lg font-semibold mb-3 flex items-center">
-                    <i class="ri-filter-3-line mr-2"></i>
-                    Entity Auswahl
-                </h2>
-
-                <div class="grid md:grid-cols-3 gap-4">
+                <div class="flex items-center gap-3">
                     <!-- Area Selection -->
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Raum</label>
-                        <div class="space-y-2">
-                            <select x-model="selectedArea" @change="onAreaChange()"
-                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                                <option value="">Wähle einen Raum...</option>
-                                <template x-for="area in areas" :key="area.name">
-                                    <option :value="area.name">
-                                        <span x-text="`${area.display_name} (${area.entity_count} Entities)`"></span>
-                                    </option>
-                                </template>
-                            </select>
-                            <div x-show="selectedAreaData && selectedAreaData.area_id" class="flex items-center space-x-2 text-sm">
-                                <span class="text-gray-500">Name Override:</span>
-                                <template x-if="!editingAreaName && selectedAreaData">
-                                    <code class="text-sm font-mono cursor-pointer hover:underline"
-                                          :class="selectedAreaData && selectedAreaData.has_override ? 'text-blue-700' : 'text-gray-600'"
-                                          x-text="selectedAreaData && selectedAreaData.has_override ? selectedAreaData.override_name : (selectedAreaData ? selectedAreaData.name : '')"
-                                          @click="startAreaEdit()"></code>
-                                </template>
-                                <template x-if="editingAreaName">
-                                    <input type="text"
-                                           x-model="areaOverrideName"
-                                           @keyup.enter="saveAreaEdit()"
-                                           @keyup.escape.stop="cancelAreaEdit()"
-                                           @blur="handleAreaBlur($event)"
-                                           class="text-sm font-mono px-2 py-1 border border-blue-500 rounded focus:ring-2 focus:ring-blue-500"
-                                           placeholder="Area Name"
-                                           x-init="$nextTick(() => $el.focus())">
-                                </template>
-                                <span x-show="editingAreaName" class="text-xs text-gray-500 italic">
-                                    Enter zum Speichern, ESC zum Abbrechen
-                                </span>
-                            </div>
-                        </div>
+                    <div class="flex-1 max-w-xs">
+                        <select x-model="selectedArea" @change="onAreaChange()"
+                                class="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <option value="">Wähle einen Raum...</option>
+                            <template x-for="area in areas" :key="area.name">
+                                <option :value="area.name">
+                                    <span x-text="`${area.display_name} (${area.entity_count})`"></span>
+                                </option>
+                            </template>
+                        </select>
                     </div>
 
                     <!-- Domain Selection -->
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Domain</label>
+                    <div class="flex-1 max-w-xs">
                         <select x-model="selectedDomain" @change="onDomainChange()" :disabled="!selectedArea"
-                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed">
-                            <option value="">Wähle eine Domain...</option>
-                            <option value="all">Alle Domänen</option>
+                                class="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed">
+                            <option value="">Domain...</option>
+                            <option value="all">Alle</option>
                             <template x-for="domain in availableDomains" :key="domain">
                                 <option :value="domain" x-text="domain"></option>
                             </template>
                         </select>
                     </div>
 
-                    <!-- Filter Options -->
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Filter</label>
-                        <label class="relative flex items-start cursor-pointer group">
-                                <input type="checkbox" x-model="skipReviewed" @change="onFilterChange()"
-                                       class="sr-only peer">
-                                <div class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                                <div class="ml-3">
-                                    <span class="text-sm font-medium text-gray-900 group-hover:text-gray-700">
-                                        Nur unbearbeitete Entities
-                                    </span>
-                                    <p class="text-xs text-gray-500 mt-0.5">
-                                        Überspringe Entities mit "maintained" Label
-                                    </p>
-                                </div>
-                        </label>
+                    <!-- Filter Buttons -->
+                    <div class="flex items-center gap-2 ml-4">
+                        <!-- Skip reviewed filter -->
+                        <button @click="skipReviewed = !skipReviewed; onFilterChange()"
+                                :class="skipReviewed ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'"
+                                class="px-3 py-1.5 text-sm rounded-lg transition-colors flex items-center gap-1.5"
+                                title="Nur unbearbeitete Entities">
+                            <i class="ri-eye-off-line"></i>
+                            <span>Maintained</span>
+                        </button>
+                        
+                        <!-- Only changes filter -->
+                        <button @click="onlyChanges = !onlyChanges; onFilterChange()"
+                                :class="onlyChanges ? 'bg-amber-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'"
+                                class="px-3 py-1.5 text-sm rounded-lg transition-colors flex items-center gap-1.5"
+                                title="Nur Entities mit Änderungen">
+                            <i class="ri-refresh-line"></i>
+                            <span>Nur Änderungen</span>
+                        </button>
+                        
+                        <!-- Show disabled filter -->
+                        <button @click="showDisabled = !showDisabled; onFilterChange()"
+                                :class="showDisabled ? 'bg-purple-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'"
+                                class="px-3 py-1.5 text-sm rounded-lg transition-colors flex items-center gap-1.5"
+                                title="Deaktivierte Entities anzeigen">
+                            <i class="ri-eye-close-line"></i>
+                            <span>Deaktivierte</span>
+                        </button>
+                    </div>
+
+                    <!-- Area name override (only when area selected) -->
+                    <div x-show="selectedAreaData && selectedAreaData.area_id" class="flex items-center gap-2 ml-auto">
+                        <span class="text-xs text-gray-500">Area:</span>
+                        <template x-if="!editingAreaName && selectedAreaData">
+                            <code class="text-xs font-mono cursor-pointer hover:underline px-2 py-1 bg-gray-100 rounded"
+                                  :class="selectedAreaData && selectedAreaData.has_override ? 'text-blue-700' : 'text-gray-600'"
+                                  x-text="selectedAreaData && selectedAreaData.has_override ? selectedAreaData.override_name : (selectedAreaData ? selectedAreaData.name : '')"
+                                  @click="startAreaEdit()"></code>
+                        </template>
+                        <template x-if="editingAreaName">
+                            <input type="text"
+                                   x-model="areaOverrideName"
+                                   @keyup.enter="saveAreaEdit()"
+                                   @keyup.escape.stop="cancelAreaEdit()"
+                                   @blur="handleAreaBlur($event)"
+                                   class="text-xs font-mono px-2 py-1 border border-blue-500 rounded focus:ring-1 focus:ring-blue-500"
+                                   placeholder="Area Name"
+                                   x-init="$nextTick(() => $el.focus())">
+                        </template>
                     </div>
                 </div>
                 
                 <!-- Summary Bar (shown when results loaded) -->
                 <div x-show="changes.length > 0 && !loading" x-cloak class="mt-4 pt-4 border-t">
                     <div class="flex items-center justify-between">
-                        <div class="flex items-center space-x-6">
-                            <div class="text-sm">
-                                <span class="text-gray-600">Gesamt:</span>
-                                <span class="font-semibold text-lg ml-1" x-text="changes.length"></span>
+                        <div class="flex items-center space-x-4 text-sm">
+                            <!-- Entity counts -->
+                            <div class="flex items-center space-x-2">
+                                <span class="text-gray-600">Entities:</span>
+                                <span class="font-semibold" x-text="totalEntities"></span>
+                                <span class="text-xs text-gray-500">(<span x-text="changes.length"></span> Geräte)</span>
+                                <span class="text-gray-400 ml-2">|</span>
+                                <span class="text-amber-600 font-semibold ml-2" x-text="needRenameCount"></span>
+                                <span class="text-xs text-amber-600">ändern</span>
+                                <span class="text-gray-400 ml-2">|</span>
+                                <span class="text-green-600 font-semibold ml-2" x-text="totalEntities - needRenameCount"></span>
+                                <span class="text-xs text-green-600">korrekt</span>
                             </div>
-                            <div class="text-sm">
-                                <span class="text-gray-600">Umbenennungen nötig:</span>
-                                <span class="font-semibold text-lg ml-1 text-amber-600" x-text="needRenameCount"></span>
-                            </div>
-                            <div class="text-sm">
-                                <span class="text-gray-600">Bereits korrekt:</span>
-                                <span class="font-semibold text-lg ml-1 text-green-600" x-text="totalEntities - needRenameCount"></span>
-                            </div>
-                            <div class="text-sm">
-                                <span class="text-gray-600">Geräte:</span>
-                                <span class="font-semibold text-lg ml-1" x-text="changes.length"></span>
+                            
+                            <!-- Selection count -->
+                            <div x-show="selectedCount > 0 || selectedDeviceCount > 0" class="flex items-center space-x-2 pl-4 border-l">
+                                <i class="ri-checkbox-circle-fill text-blue-600"></i>
+                                <span class="text-gray-600">Ausgewählt:</span>
+                                <span x-show="selectedCount > 0" class="font-semibold text-blue-600">
+                                    <span x-text="selectedCount"></span> Entities
+                                </span>
+                                <span x-show="selectedCount > 0 && selectedDeviceCount > 0" class="text-gray-400">+</span>
+                                <span x-show="selectedDeviceCount > 0" class="font-semibold text-blue-600">
+                                    <span x-text="selectedDeviceCount"></span> Devices
+                                </span>
                             </div>
                         </div>
                         <div class="flex items-center space-x-2">
@@ -426,10 +437,16 @@
                                                         </div>
                                                         
                                                         <!-- Status badges -->
-                                                        <span x-show="entity && entity.needs_rename" 
-                                                              class="text-xs px-1.5 py-0.5 rounded-full"
-                                                              :class="entity && entity.has_override ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-700'"
-                                                              x-text="entity && entity.has_override ? 'Override' : 'Vorschlag'"></span>
+                                                        <button x-show="entity && entity.needs_rename && !entity.has_override" 
+                                                                @click.stop="acceptEntitySuggestion(entity)"
+                                                                class="text-xs px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 hover:bg-amber-200 transition-colors"
+                                                                title="Vorschlag übernehmen">
+                                                            Vorschlag
+                                                        </button>
+                                                        <span x-show="entity && entity.needs_rename && entity.has_override" 
+                                                              class="text-xs px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-700">
+                                                            Override
+                                                        </span>
                                                         <span x-show="entity && !entity.needs_rename && entity.has_maintained_label" 
                                                               class="text-xs px-1.5 py-0.5 bg-gray-100 text-gray-600 rounded-full">
                                                             <i class="ri-check-line"></i> Maintained
@@ -562,6 +579,8 @@
                 selectedDomain: 'all',
                 availableDomains: [],
                 skipReviewed: false,
+                onlyChanges: false,
+                showDisabled: false,
                 changes: [],
                 loading: false,
                 executing: false,
@@ -592,6 +611,12 @@
                             const filters = JSON.parse(savedFilters);
                             if (filters.skipReviewed !== undefined) {
                                 this.skipReviewed = filters.skipReviewed;
+                            }
+                            if (filters.onlyChanges !== undefined) {
+                                this.onlyChanges = filters.onlyChanges;
+                            }
+                            if (filters.showDisabled !== undefined) {
+                                this.showDisabled = filters.showDisabled;
                             }
                             // We'll restore area and domain after loading areas
                             this.savedFilters = filters;
@@ -626,7 +651,9 @@
                         const filters = {
                             area: this.selectedArea,
                             domain: this.selectedDomain,
-                            skipReviewed: this.skipReviewed
+                            skipReviewed: this.skipReviewed,
+                            onlyChanges: this.onlyChanges,
+                            showDisabled: this.showDisabled
                         };
                         localStorage.setItem('entityManagerFilters', JSON.stringify(filters));
                     } catch (e) {
@@ -697,7 +724,9 @@
                             body: JSON.stringify({
                                 area: this.selectedArea,
                                 domain: this.selectedDomain,
-                                skip_reviewed: this.skipReviewed
+                                skip_reviewed: this.skipReviewed,
+                                only_changes: this.onlyChanges,
+                                show_disabled: this.showDisabled
                             })
                         });
 
@@ -1119,9 +1148,6 @@
                         return;
                     }
 
-                    if (!confirm(`Möchten Sie das Gerät "${device.current_name}" wirklich in Home Assistant zu "${device.override_name}" umbenennen?`)) {
-                        return;
-                    }
 
                     try {
                         const response = await fetch('api/rename_device_in_ha', {
@@ -1316,8 +1342,6 @@
                 async executeChanges() {
                     if (this.selectedCount === 0 && this.selectedDeviceCount === 0) return;
 
-                    const confirmText = this.getExecuteButtonText().replace(' verarbeiten', '');
-                    if (!confirm(`Wirklich ${confirmText} verarbeiten?`)) return;
 
                     this.executing = true;
                     const selectedEntities = [];
