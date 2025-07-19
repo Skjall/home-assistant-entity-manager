@@ -1353,11 +1353,8 @@
                         });
 
                         if (response.ok) {
-                            // Reload areas to show updated names
-                            await this.loadAreas();
-                            // Update selectedAreaData
-                            const area = this.areas.find(a => a.name === this.selectedArea);
-                            this.selectedAreaData = area;
+                            // Reload the page to ensure all entity suggestions are recalculated with the new area name
+                            window.location.reload();
                         } else {
                             const error = await response.json();
                             this.showMessage(`Fehler: ${error.error}`, 'error');
