@@ -556,6 +556,10 @@ async def _preview_changes_async():
             }
         )
 
+    except Exception as e:
+        logger.error(f"Error in _preview_changes_async: {str(e)}", exc_info=True)
+        return jsonify({"error": str(e)}), 500
+
     finally:
         await ws.disconnect()
 
