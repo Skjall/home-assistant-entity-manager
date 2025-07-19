@@ -651,11 +651,16 @@ async def _execute_changes_async():
                         }
                     )
 
-                    # Rename all associated entities
-                    # Generiere neue Namen basierend auf dem neuen Device Namen
+                    # Only rename entities that were explicitly selected
+                    # Don't automatically rename all device entities when only device is selected
                     await renamer_state["restructurer"].load_structure(ws)
 
                     for entity_id in device_entities:
+                        # Skip entities that weren't explicitly selected
+                        if entity_id not in selected_entities:
+                            logger.info(f"Skipping entity {entity_id} - not explicitly selected")
+                            continue
+
                         # Hole Entity Info aus states
                         entity_state = next((s for s in states if s["entity_id"] == entity_id), None)
                         if entity_state:
