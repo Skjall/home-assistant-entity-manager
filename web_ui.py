@@ -1140,30 +1140,46 @@ async def _set_entity_override_async():
                 entity_id = eid
                 break
 
-        if entity_id and override_name:
-            # Berechne den neuen Friendly Name basierend auf dem Override
-            # We need to use the restructurer's structure
-            new_id, new_friendly_name = renamer_state["restructurer"].generate_new_entity_id(
-                entity_id, {"entity_id": entity_id, "attributes": {}}
+        # Calculate the new entity ID and friendly name with the override
+        new_id = None
+        new_friendly_name = None
+
+        if entity_id:
+            # Get current entity state for proper calculation
+            client = await init_client()
+            states = await client.get_states()
+            entity_state = next(
+                (s for s in states if s["entity_id"] == entity_id), {"entity_id": entity_id, "attributes": {}}
             )
 
-            # Aktualisiere den Friendly Name in Home Assistant
-            base_url = os.getenv("HA_URL")
-            token = os.getenv("HA_TOKEN")
-            ws_url = base_url.replace("https://", "wss://").replace("http://", "ws://") + "/api/websocket"
+            # Calculate with current override
+            new_id, new_friendly_name = renamer_state["restructurer"].generate_new_entity_id(entity_id, entity_state)
 
-            ws = HomeAssistantWebSocket(ws_url, token)
-            await ws.connect()
+            if override_name:
+                # Update the friendly name in Home Assistant
+                base_url = os.getenv("HA_URL")
+                token = os.getenv("HA_TOKEN")
+                ws_url = base_url.replace("https://", "wss://").replace("http://", "ws://") + "/api/websocket"
 
-            try:
-                entity_registry = EntityRegistry(ws)
-                # Update nur den Friendly Name, nicht die Entity ID
-                await entity_registry.update_entity(entity_id=entity_id, name=new_friendly_name)
-                logger.info(f"Entity {entity_id} Friendly Name aktualisiert zu: {new_friendly_name}")
-            finally:
-                await ws.disconnect()
+                ws = HomeAssistantWebSocket(ws_url, token)
+                await ws.connect()
 
-        return jsonify({"success": True})
+                try:
+                    entity_registry = EntityRegistry(ws)
+                    # Update nur den Friendly Name, nicht die Entity ID
+                    await entity_registry.update_entity(entity_id=entity_id, name=new_friendly_name)
+                    logger.info(f"Entity {entity_id} Friendly Name aktualisiert zu: {new_friendly_name}")
+                finally:
+                    await ws.disconnect()
+
+        return jsonify(
+            {
+                "success": True,
+                "new_id": new_id,
+                "new_friendly_name": new_friendly_name,
+                "has_override": bool(override_name),
+            }
+        )
     except Exception as e:
         logger.error(f"Fehler beim Setzen des Entity Override: {e}")
         return jsonify({"error": str(e)}), 500

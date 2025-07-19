@@ -1170,13 +1170,16 @@
                         });
 
                         if (response.ok) {
-                            // Setze has_override Flag
-                            entity.has_override = !!entity.override_name;
-
-                            // Aktualisiere die berechneten IDs/Namen während editing noch true ist
-                            entity.new_id = this.getEntityPreviewId(entity);
-                            entity.new_name = this.getEntityFriendlyName(entity);
-
+                            const result = await response.json();
+                            
+                            // Update entity with backend-calculated values
+                            entity.has_override = result.has_override;
+                            entity.new_id = result.new_id || entity.new_id;
+                            entity.new_name = result.new_friendly_name || entity.new_name;
+                            
+                            // Update needs_rename flag based on whether the ID changed
+                            entity.needs_rename = entity.old_id !== entity.new_id;
+                            
                             // Jetzt erst editing auf false setzen
                             entity.editing = false;
 
