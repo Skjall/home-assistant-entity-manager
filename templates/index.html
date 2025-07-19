@@ -384,7 +384,8 @@
                                              entity && entity.needs_rename ? 'needs-rename' : 'already-correct',
                                              entity && entity.selected ? 'selected' : '',
                                              deviceGroup && deviceGroup.device && deviceGroup.device.selected ? 'opacity-50 cursor-not-allowed' : 
-                                             (!entity.needs_rename && entity.has_maintained_label) ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+                                             (!entity.needs_rename && entity.has_maintained_label) ? 'opacity-50 cursor-not-allowed' : 
+                                             (!entity.has_override && (getEntitySuggestion(entity) === 'Sensor' || getEntitySuggestion(entity) === 'Enum')) ? 'cursor-not-allowed' : 'cursor-pointer'
                                          ]"
                                          @click="!(deviceGroup && deviceGroup.device && deviceGroup.device.selected) && entityCanBeSelected(entity) && toggleSelection(entity)">
                                         <div class="p-3">
@@ -408,7 +409,7 @@
                                                         <!-- Entity ID Line -->
                                                         <div class="flex items-center space-x-2 text-sm">
                                                             <code class="font-mono text-gray-700" x-text="entity ? entity.old_id : ''"></code>
-                                                            <template x-if="entity && entity.needs_rename">
+                                                            <template x-if="entity && entity.needs_rename && (entity.has_override || (getEntitySuggestion(entity) !== 'Sensor' && getEntitySuggestion(entity) !== 'Enum'))">
                                                                 <span class="flex items-center text-amber-600">
                                                                     <i class="ri-arrow-right-line mx-1"></i>
                                                                     <code class="font-mono font-semibold" x-text="entity ? entity.new_id : ''"></code>
@@ -419,7 +420,7 @@
                                                         <!-- Friendly Name Line -->
                                                         <div class="flex items-center space-x-2 text-sm mt-1">
                                                             <span class="text-gray-600" x-text="entity ? entity.current_name : ''"></span>
-                                                            <template x-if="entity && entity.needs_rename">
+                                                            <template x-if="entity && entity.needs_rename && (entity.has_override || (getEntitySuggestion(entity) !== 'Sensor' && getEntitySuggestion(entity) !== 'Enum'))">
                                                                 <span class="flex items-center text-green-600">
                                                                     <i class="ri-arrow-right-line mx-1"></i>
                                                                     <span class="font-semibold" x-text="entity ? entity.new_name : ''"></span>
@@ -1010,6 +1011,13 @@
                     // Entity can be selected if:
                     // 1. It needs renaming (ID or name change), OR
                     // 2. It doesn't have the maintained label yet
+                    // BUT NOT if the suggestion is "Sensor" or "Enum" (unless it has an override)
+                    if (!entity.has_override) {
+                        const suggestion = this.getEntitySuggestion(entity);
+                        if (suggestion === 'Sensor' || suggestion === 'Enum') {
+                            return false;
+                        }
+                    }
                     return entity.needs_rename || !entity.has_maintained_label;
                 },
 
