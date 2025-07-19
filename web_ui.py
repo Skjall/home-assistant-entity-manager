@@ -1212,7 +1212,45 @@ async def _set_device_override_async():
         else:
             renamer_state["naming_overrides"].remove_device_override(device_id)
 
-        return jsonify({"success": True})
+        # Calculate updated entity suggestions for this device
+        updated_entities = []
+
+        # Get all entities for this device
+        client = await init_client()
+        states = await client.get_states()
+
+        # Find entities that belong to this device
+        for entity_id, entity in renamer_state["restructurer"].entities.items():
+            if entity.get("device_id") == device_id:
+                # Get current state
+                entity_state = next(
+                    (s for s in states if s["entity_id"] == entity_id), {"entity_id": entity_id, "attributes": {}}
+                )
+
+                # Calculate new names with updated device override
+                new_id, new_friendly_name = renamer_state["restructurer"].generate_new_entity_id(
+                    entity_id, entity_state
+                )
+
+                # Get entity registry info for additional data
+                entity_reg = renamer_state["restructurer"].entities.get(entity_id, {})
+
+                updated_entities.append(
+                    {
+                        "old_id": entity_id,
+                        "new_id": new_id,
+                        "new_name": new_friendly_name,
+                        "needs_rename": entity_id != new_id,
+                        "registry_id": entity_reg.get("id", ""),
+                        "has_override": bool(
+                            renamer_state["naming_overrides"].get_entity_override(entity_reg.get("id", ""))
+                        ),
+                    }
+                )
+
+        return jsonify(
+            {"success": True, "updated_entities": updated_entities, "device_has_override": bool(override_name)}
+        )
     except Exception as e:
         logger.error(f"Fehler beim Setzen des Device Override: {e}")
         return jsonify({"error": str(e)}), 500

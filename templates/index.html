@@ -351,17 +351,19 @@
                                          :class="[
                                              entity && entity.needs_rename ? 'needs-rename' : 'already-correct',
                                              entity && entity.selected ? 'selected' : '',
-                                             deviceGroup && deviceGroup.device && deviceGroup.device.selected ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+                                             deviceGroup && deviceGroup.device && deviceGroup.device.selected ? 'opacity-50 cursor-not-allowed' : 
+                                             (!entity.needs_rename && entity.has_maintained_label) ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
                                          ]"
-                                         @click="!(deviceGroup && deviceGroup.device && deviceGroup.device.selected) && toggleSelection(entity)">
+                                         @click="!(deviceGroup && deviceGroup.device && deviceGroup.device.selected) && entityCanBeSelected(entity) && toggleSelection(entity)">
                                         <div class="p-4">
                                             <div class="flex items-start space-x-4">
                                                 <!-- Selection Indicator -->
                                                 <div class="pt-1 selection-indicator">
                                                     <div class="w-6 h-6 rounded-full flex items-center justify-center"
                                                          :class="[
-                                                             entity && entity.selected ? 'bg-blue-600' : (deviceGroup && deviceGroup.device && deviceGroup.device.selected ? 'bg-gray-200' : 'bg-gray-300'),
-                                                             deviceGroup && deviceGroup.device && deviceGroup.device.selected ? 'cursor-not-allowed' : 'cursor-pointer'
+                                                             entity && entity.selected ? 'bg-blue-600' : 
+                                                             (deviceGroup && deviceGroup.device && deviceGroup.device.selected) || !entityCanBeSelected(entity) ? 'bg-gray-200' : 'bg-gray-300',
+                                                             (deviceGroup && deviceGroup.device && deviceGroup.device.selected) || !entityCanBeSelected(entity) ? 'cursor-not-allowed' : 'cursor-pointer'
                                                          ]">
                                                         <i class="text-white text-sm"
                                                            :class="entity && entity.selected ? 'ri-check-line' : ''"></i>
@@ -608,43 +610,56 @@
                 editingAreaName: false,
                 areaOverrideName: '',
                 selectedAreaData: null,
+                savedFilters: null,
 
                 async init() {
-                    // Lade URL Parameter
-                    const urlParams = new URLSearchParams(window.location.search);
-                    const area = urlParams.get('area');
-                    const domain = urlParams.get('domain');
-                    const skipReviewed = urlParams.get('skip_reviewed') === 'true';
-
-                    // Setze gespeicherte Werte
-                    if (skipReviewed) {
-                        this.skipReviewed = skipReviewed;
+                    // Try to restore filters from localStorage (works in iframe)
+                    try {
+                        const savedFilters = localStorage.getItem('entityManagerFilters');
+                        if (savedFilters) {
+                            const filters = JSON.parse(savedFilters);
+                            if (filters.skipReviewed !== undefined) {
+                                this.skipReviewed = filters.skipReviewed;
+                            }
+                            // We'll restore area and domain after loading areas
+                            this.savedFilters = filters;
+                        }
+                    } catch (e) {
+                        console.error('Error loading saved filters:', e);
                     }
 
                     // Lade Areas
                     await this.loadAreas();
 
-                    // Setze gespeicherte Filter wenn vorhanden
-                    if (area && this.areas.find(a => a.name === area)) {
-                        this.selectedArea = area;
-                        this.onAreaChange(false); // false = don't update URL yet
+                    // Restore saved filters if available
+                    if (this.savedFilters) {
+                        const { area, domain } = this.savedFilters;
+                        
+                        if (area && this.areas.find(a => a.name === area)) {
+                            this.selectedArea = area;
+                            this.onAreaChange(false); // false = don't save to storage yet
 
-                        if (domain && (domain === 'all' || this.availableDomains.includes(domain))) {
-                            this.selectedDomain = domain;
-                            // Lade Preview automatisch
-                            await this.loadPreview();
+                            if (domain && (domain === 'all' || this.availableDomains.includes(domain))) {
+                                this.selectedDomain = domain;
+                                // Lade Preview automatisch
+                                await this.loadPreview();
+                            }
                         }
                     }
                 },
 
-                updateURL() {
-                    const params = new URLSearchParams();
-                    if (this.selectedArea) params.set('area', this.selectedArea);
-                    if (this.selectedDomain) params.set('domain', this.selectedDomain);
-                    if (this.skipReviewed) params.set('skip_reviewed', 'true');
-
-                    const newURL = window.location.pathname + (params.toString() ? '?' + params.toString() : '');
-                    window.history.replaceState({}, '', newURL);
+                saveFilters() {
+                    // Save filters to localStorage for persistence in iframe
+                    try {
+                        const filters = {
+                            area: this.selectedArea,
+                            domain: this.selectedDomain,
+                            skipReviewed: this.skipReviewed
+                        };
+                        localStorage.setItem('entityManagerFilters', JSON.stringify(filters));
+                    } catch (e) {
+                        console.error('Error saving filters:', e);
+                    }
                 },
 
                 async loadAreas() {
@@ -684,12 +699,12 @@
                     }
 
                     if (updateUrl) {
-                        this.updateURL();
+                        this.saveFilters();
                     }
                 },
 
                 async onDomainChange() {
-                    this.updateURL();
+                    this.saveFilters();
                     // Automatisch laden wenn beide Filter gesetzt sind
                     if (this.selectedArea && this.selectedDomain) {
                         await this.loadPreview();
@@ -752,11 +767,28 @@
                     this.selectedDeviceCount = deviceCount;
                 },
 
+                updateCounts() {
+                    // Update the need rename count
+                    let needRename = 0;
+                    this.changes.forEach(deviceGroup => {
+                        if (deviceGroup && deviceGroup.device && deviceGroup.device.needs_rename) {
+                            needRename++;
+                        }
+                        if (deviceGroup && deviceGroup.entities) {
+                            needRename += deviceGroup.entities.filter(e => e && e.needs_rename).length;
+                        }
+                    });
+                    this.needRenameCount = needRename;
+                },
+
                 selectAll() {
                     this.changes.forEach(deviceGroup => {
                         if (deviceGroup && deviceGroup.entities) {
                             deviceGroup.entities.forEach(e => {
-                                if (e) e.selected = true;
+                                // Only select entities that can be selected
+                                if (e && this.entityCanBeSelected(e)) {
+                                    e.selected = true;
+                                }
                             });
                         }
                         if (deviceGroup && deviceGroup.device && deviceGroup.device.needs_rename) {
@@ -953,9 +985,18 @@
                     return parts.join(' ');
                 },
 
+                entityCanBeSelected(entity) {
+                    // Entity can be selected if:
+                    // 1. It needs renaming (ID or name change), OR
+                    // 2. It doesn't have the maintained label yet
+                    return entity.needs_rename || !entity.has_maintained_label;
+                },
+
                 toggleSelection(entity) {
-                    entity.selected = !entity.selected;
-                    this.updateSelectedCount();
+                    if (this.entityCanBeSelected(entity)) {
+                        entity.selected = !entity.selected;
+                        this.updateSelectedCount();
+                    }
                 },
 
                 toggleDeviceSelection(device) {
@@ -1020,8 +1061,50 @@
                         });
 
                         if (response.ok) {
-                            // Reload preview to show updated names
-                            await this.loadPreview();
+                            const result = await response.json();
+                            
+                            // Update device override status
+                            device.has_override = result.device_has_override;
+                            
+                            // Update device needs_rename status
+                            const newDeviceName = this.getDevicePreviewName(device);
+                            device.needs_rename = device.current_name !== newDeviceName;
+                            
+                            // Update entity suggestions without reloading
+                            if (result.updated_entities && result.updated_entities.length > 0) {
+                                // Find the device group
+                                const deviceGroup = this.changes.find(dg => dg.device && dg.device.id === device.id);
+                                if (deviceGroup && deviceGroup.entities) {
+                                    // Update each entity with new suggestions
+                                    result.updated_entities.forEach(updatedEntity => {
+                                        const entity = deviceGroup.entities.find(e => e.old_id === updatedEntity.old_id);
+                                        if (entity) {
+                                            // Preserve selection state
+                                            const wasSelected = entity.selected;
+                                            
+                                            // Update entity data
+                                            entity.new_id = updatedEntity.new_id;
+                                            entity.new_name = updatedEntity.new_name;
+                                            entity.needs_rename = updatedEntity.needs_rename;
+                                            entity.has_override = updatedEntity.has_override;
+                                            
+                                            // Restore selection state
+                                            entity.selected = wasSelected;
+                                            
+                                            // If entity can no longer be selected, deselect it
+                                            if (!this.entityCanBeSelected(entity)) {
+                                                entity.selected = false;
+                                            }
+                                        }
+                                    });
+                                    
+                                    // Update counts
+                                    this.updateCounts();
+                                    this.updateSelectedCount();
+                                }
+                            }
+                            
+                            this.showMessage('Device Override gespeichert', 'success');
                         } else {
                             const error = await response.json();
                             this.showMessage(`Fehler: ${error.error}`, 'error');
@@ -1251,7 +1334,7 @@
                 },
 
                 async onFilterChange() {
-                    this.updateURL();
+                    this.saveFilters();
                     // Reload wenn beide Filter gesetzt sind
                     if (this.selectedArea && this.selectedDomain) {
                         await this.loadPreview();
