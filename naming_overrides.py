@@ -17,26 +17,21 @@ class NamingOverrides:
 
     def _load_data(self) -> Dict[str, Any]:
         """Lade gespeicherte Overrides"""
-        if self.storage_path.exists():
-            try:
-                with open(self.storage_path, "r", encoding="utf-8") as f:
-                    return json.load(f)
-            except (json.JSONDecodeError, IOError) as e:
-                logger.error(f"Fehler beim Laden der Overrides: {e}")
+        default_data = {"entities": {}, "devices": {}, "areas": {}}
 
-        # Default-Struktur
-        data = {"entities": {}, "devices": {}, "areas": {}}
-        # Ensure areas key exists in existing data
         if self.storage_path.exists():
             try:
                 with open(self.storage_path, "r", encoding="utf-8") as f:
                     existing_data = json.load(f)
-                    if "areas" not in existing_data:
-                        existing_data["areas"] = {}
+                    # Ensure all required keys exist
+                    for key in default_data:
+                        if key not in existing_data:
+                            existing_data[key] = default_data[key]
                     return existing_data
-            except (json.JSONDecodeError, IOError):
-                pass
-        return data
+            except (json.JSONDecodeError, IOError) as e:
+                logger.error(f"Fehler beim Laden der Overrides: {e}")
+
+        return default_data
 
     def _save_data(self) -> None:
         """Speichere Overrides"""
@@ -53,6 +48,8 @@ class NamingOverrides:
 
     def set_entity_override(self, registry_id: str, name: str, type_override: Optional[str] = None) -> None:
         """Setze Entity Name Override"""
+        if "entities" not in self.data:
+            self.data["entities"] = {}
         self.data["entities"][registry_id] = {"name": name}
         if type_override:
             self.data["entities"][registry_id]["type"] = type_override
@@ -61,11 +58,11 @@ class NamingOverrides:
 
     def get_entity_override(self, registry_id: str) -> Optional[Dict[str, str]]:
         """Hole Entity Override"""
-        return self.data["entities"].get(registry_id)
+        return self.data.get("entities", {}).get(registry_id)
 
     def remove_entity_override(self, registry_id: str) -> None:
         """Entferne Entity Override"""
-        if registry_id in self.data["entities"]:
+        if "entities" in self.data and registry_id in self.data["entities"]:
             del self.data["entities"][registry_id]
             self._save_data()
             logger.info(f"Entity override entfernt: {registry_id}")
@@ -74,17 +71,19 @@ class NamingOverrides:
 
     def set_device_override(self, device_id: str, name: str) -> None:
         """Setze Device Name Override"""
+        if "devices" not in self.data:
+            self.data["devices"] = {}
         self.data["devices"][device_id] = {"name": name}
         self._save_data()
         logger.info(f"Device override gesetzt: {device_id} -> {name}")
 
     def get_device_override(self, device_id: str) -> Optional[Dict[str, str]]:
         """Hole Device Override"""
-        return self.data["devices"].get(device_id)
+        return self.data.get("devices", {}).get(device_id)
 
     def remove_device_override(self, device_id: str) -> None:
         """Entferne Device Override"""
-        if device_id in self.data["devices"]:
+        if "devices" in self.data and device_id in self.data["devices"]:
             del self.data["devices"][device_id]
             self._save_data()
             logger.info(f"Device override entfernt: {device_id}")
@@ -114,11 +113,11 @@ class NamingOverrides:
 
     def get_all_entity_overrides(self) -> Dict[str, Dict[str, str]]:
         """Hole alle Entity Overrides"""
-        return self.data["entities"].copy()
+        return self.data.get("entities", {}).copy()
 
     def get_all_device_overrides(self) -> Dict[str, Dict[str, str]]:
         """Hole alle Device Overrides"""
-        return self.data["devices"].copy()
+        return self.data.get("devices", {}).copy()
 
     def get_all_area_overrides(self) -> Dict[str, Dict[str, str]]:
         """Hole alle Area Overrides"""
