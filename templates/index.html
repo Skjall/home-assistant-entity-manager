@@ -1209,18 +1209,26 @@
 
                     // Wenn ein Override existiert, zeige diesen, sonst extrahiere nur den Entity-Typ
                     if (!entity.has_override) {
-                        // Schlage einen schönen Namen vor basierend auf dem Entity-Typ
-                        // z.B. "light.diele_deckenspot_licht" -> "Licht"
-                        const idParts = entity.new_id.split('.');
-                        if (idParts.length > 1) {
-                            const entityPart = idParts[1]; // "diele_deckenspot_licht"
-                            const underscoreParts = entityPart.split('_');
-                            // Nimm den letzten Teil als Entity-Typ und mache ihn schön
-                            const entityType = underscoreParts[underscoreParts.length - 1];
-                            // Konvertiere zu schönem Namen
-                            entity.override_name = entityType.charAt(0).toUpperCase() + entityType.slice(1);
+                        // Get the suggestion
+                        const suggestion = this.getEntitySuggestion(entity);
+                        
+                        // Don't pre-fill with "Sensor" or "Enum" - these are technical values
+                        if (suggestion === 'Sensor' || suggestion === 'Enum') {
+                            entity.override_name = '';
                         } else {
-                            entity.override_name = entity.new_id;
+                            // Schlage einen schönen Namen vor basierend auf dem Entity-Typ
+                            // z.B. "light.diele_deckenspot_licht" -> "Licht"
+                            const idParts = entity.new_id.split('.');
+                            if (idParts.length > 1) {
+                                const entityPart = idParts[1]; // "diele_deckenspot_licht"
+                                const underscoreParts = entityPart.split('_');
+                                // Nimm den letzten Teil als Entity-Typ und mache ihn schön
+                                const entityType = underscoreParts[underscoreParts.length - 1];
+                                // Konvertiere zu schönem Namen
+                                entity.override_name = entityType.charAt(0).toUpperCase() + entityType.slice(1);
+                            } else {
+                                entity.override_name = entity.new_id;
+                            }
                         }
                     }
 
