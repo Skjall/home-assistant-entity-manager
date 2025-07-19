@@ -51,7 +51,7 @@
     </script>
 </head>
 <body class="bg-gray-50">
-    <div x-data="entityManager()" x-init="init()" class="min-h-screen">
+    <div x-data="entityManager()" x-init="init()" class="h-screen flex flex-col">
         <!-- Alpha Warning Banner -->
         <div class="bg-red-600 text-white px-4 py-3">
             <div class="max-w-7xl mx-auto flex items-center justify-center space-x-2">
@@ -82,10 +82,11 @@
             </div>
         </header>
 
-        <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <!-- Selection Panel -->
-            <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
-                <h2 class="text-lg font-semibold mb-4 flex items-center">
+        <!-- Fixed Top Section -->
+        <div class="bg-white border-b shadow-sm">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+                <!-- Selection Panel -->
+                <h2 class="text-lg font-semibold mb-3 flex items-center">
                     <i class="ri-filter-3-line mr-2"></i>
                     Entity Auswahl
                 </h2>
@@ -160,20 +161,9 @@
                         </label>
                     </div>
                 </div>
-            </div>
-
-            <!-- Loading State -->
-            <div x-show="loading" x-cloak class="flex justify-center py-12">
-                <div class="flex items-center space-x-2">
-                    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                    <span class="text-gray-600">Lade Entities...</span>
-                </div>
-            </div>
-
-            <!-- Preview Results -->
-            <div x-show="changes.length > 0 && !loading" x-cloak>
-                <!-- Summary -->
-                <div class="bg-white rounded-lg shadow-sm p-4 mb-6">
+                
+                <!-- Summary Bar (shown when results loaded) -->
+                <div x-show="changes.length > 0 && !loading" x-cloak class="mt-4 pt-4 border-t">
                     <div class="flex items-center justify-between">
                         <div class="flex items-center space-x-6">
                             <div class="text-sm">
@@ -213,30 +203,46 @@
                         </div>
                     </div>
                 </div>
+            </div>
+        </div>
+
+        <!-- Scrollable Content -->
+        <main class="flex-1 overflow-y-auto">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+                <!-- Loading State -->
+            <div x-show="loading" x-cloak class="flex justify-center py-12">
+                <div class="flex items-center space-x-2">
+                    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                    <span class="text-gray-600">Lade Entities...</span>
+                </div>
+            </div>
+
+            <!-- Preview Results -->
+            <div x-show="changes.length > 0 && !loading" x-cloak>
 
                 <!-- Device/Entity List -->
                 <div class="space-y-4">
                     <template x-for="(deviceGroup, index) in changes" :key="index">
                         <div class="bg-white rounded-lg shadow-sm overflow-hidden">
                             <!-- Device Header -->
-                            <div class="bg-gray-50 px-4 py-3 border-b border-gray-200"
+                            <div class="bg-gray-50 px-3 py-2 border-b border-gray-200"
                                  :class="[
                                      deviceGroup && deviceGroup.device && deviceGroup.device.needs_rename ? 'bg-amber-50 cursor-pointer' : 'cursor-default',
                                      deviceGroup && deviceGroup.device && deviceGroup.device.selected ? 'ring-2 ring-blue-500' : ''
                                  ]"
                                  @click="deviceGroup && deviceGroup.device && deviceGroup.device.needs_rename && toggleDeviceSelection(deviceGroup.device)">
-                                <div x-show="deviceGroup && deviceGroup.device" class="space-y-3">
+                                <div x-show="deviceGroup && deviceGroup.device">
                                     <!-- Device Info Row -->
-                                    <div class="flex items-start space-x-4">
+                                    <div class="flex items-center space-x-3">
                                         <!-- Device Selection Checkbox -->
-                                        <div class="pt-1">
-                                            <div class="w-6 h-6 rounded-full flex items-center justify-center"
+                                        <div>
+                                            <div class="w-5 h-5 rounded-full flex items-center justify-center"
                                                  :class="[
                                                      deviceGroup && deviceGroup.device && deviceGroup.device.needs_rename ? 'cursor-pointer' : 'cursor-not-allowed opacity-50',
                                                      deviceGroup && deviceGroup.device && deviceGroup.device.selected ? 'bg-blue-600' : (deviceGroup && deviceGroup.device && deviceGroup.device.needs_rename ? 'bg-gray-300' : 'bg-gray-200')
                                                  ]"
                                                  @click.stop="deviceGroup && deviceGroup.device && deviceGroup.device.needs_rename && toggleDeviceSelection(deviceGroup.device)">
-                                                <i class="text-white text-sm"
+                                                <i class="text-white text-xs"
                                                    :class="deviceGroup && deviceGroup.device && deviceGroup.device.selected ? 'ri-check-line' : ''"></i>
                                             </div>
                                         </div>
@@ -355,120 +361,85 @@
                                              (!entity.needs_rename && entity.has_maintained_label) ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
                                          ]"
                                          @click="!(deviceGroup && deviceGroup.device && deviceGroup.device.selected) && entityCanBeSelected(entity) && toggleSelection(entity)">
-                                        <div class="p-4">
-                                            <div class="flex items-start space-x-4">
+                                        <div class="p-3">
+                                            <div class="flex items-center space-x-3">
                                                 <!-- Selection Indicator -->
-                                                <div class="pt-1 selection-indicator">
-                                                    <div class="w-6 h-6 rounded-full flex items-center justify-center"
+                                                <div class="selection-indicator">
+                                                    <div class="w-5 h-5 rounded-full flex items-center justify-center"
                                                          :class="[
                                                              entity && entity.selected ? 'bg-blue-600' : 
                                                              (deviceGroup && deviceGroup.device && deviceGroup.device.selected) || !entityCanBeSelected(entity) ? 'bg-gray-200' : 'bg-gray-300',
                                                              (deviceGroup && deviceGroup.device && deviceGroup.device.selected) || !entityCanBeSelected(entity) ? 'cursor-not-allowed' : 'cursor-pointer'
                                                          ]">
-                                                        <i class="text-white text-sm"
+                                                        <i class="text-white text-xs"
                                                            :class="entity && entity.selected ? 'ri-check-line' : ''"></i>
                                                     </div>
                                                 </div>
 
                                                 <!-- Entity Info -->
                                                 <div class="flex-1">
-                                                    <div class="grid md:grid-cols-2 gap-4">
-                                                        <!-- Current State -->
-                                                        <div>
-                                                            <h4 class="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Aktuell</h4>
-                                                            <div class="space-y-1">
-                                                                <div class="flex items-center space-x-2">
-                                                                    <i class="ri-key-line text-gray-400"></i>
-                                                                    <code class="text-sm font-mono text-gray-900" x-text="entity ? entity.old_id : ''"></code>
-                                                                </div>
-                                                                <div class="flex items-center space-x-2">
-                                                                    <i class="ri-text-line text-gray-400"></i>
-                                                                    <span class="text-sm text-gray-700" x-text="entity ? entity.current_name : ''"></span>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-
-                                                        <!-- New State -->
-                                                        <div>
-                                                            <h4 class="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">
-                                                                <span x-show="entity && entity.needs_rename" x-text="entity && entity.has_override ? 'Änderung' : 'Vorschlag'"></span>
-                                                                <span x-show="entity && !entity.needs_rename && !entity.has_maintained_label">Wird mit Label versehen</span>
-                                                                <span x-show="entity && !entity.needs_rename && entity.has_maintained_label">Bereits bearbeitet</span>
-                                                            </h4>
-                                                            <div class="space-y-1">
-                                                                <div class="flex items-center space-x-2">
-                                                                    <i class="ri-key-line" :class="entity && entity.needs_rename ? 'text-amber-500' : 'text-gray-400'"></i>
-                                                                    <code class="text-sm font-mono"
-                                                                          :class="entity && entity.needs_rename ? (entity && entity.has_override ? 'text-blue-700 font-semibold' : 'text-amber-700 font-semibold') : 'text-gray-500'"
-                                                                          x-text="entity && entity.editing ? getEntityPreviewId(entity) : (entity ? entity.new_id : '')"></code>
-                                                                </div>
-                                                                <div class="flex items-center space-x-2">
-                                                                    <i class="ri-text-line text-gray-400"></i>
-                                                                    <span class="text-sm text-gray-700"
-                                                                          x-text="entity && entity.editing ? getEntityFriendlyName(entity) : (entity ? entity.new_name : '')"></span>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-
-                                                    <!-- Entity Renaming Suggestion -->
-                                                    <div x-show="entity" class="mt-3 pt-3 border-t border-gray-100">
-                                                        <div class="flex items-center space-x-4">
-                                                            <div class="flex-1">
-                                                                <div class="flex items-center space-x-2">
-                                                                    <span x-show="entity" class="text-xs text-gray-500" x-text="entity && entity.has_override ? 'Basisname:' : (entity && entity.needs_rename ? 'Vorschlag:' : 'Basisname:')"></span>
-                                                                    <template x-if="entity && !entity.editing">
-                                                                        <code class="text-sm font-mono cursor-pointer hover:underline"
-                                                                              :class="entity ? (entity.has_override ? 'text-blue-700' : 'text-amber-700') : 'text-gray-500'"
-                                                                              x-text="entity ? (entity.has_override ? entity.override_name : getEntitySuggestion(entity)) : ''"
-                                                                              @click="startEntityEdit(entity)"></code>
-                                                                    </template>
-                                                                    <template x-if="entity && entity.editing">
-                                                                        <input type="text"
-                                                                               x-model="entity.override_name"
-                                                                               @input=""
-                                                                               @keyup.enter="saveEntityEdit(entity)"
-                                                                               @keyup.escape.stop="cancelEntityEdit(entity)"
-                                                                               @blur="handleEntityBlur($event, entity)"
-                                                                               class="text-sm font-mono px-2 py-1 border border-amber-500 rounded focus:ring-2 focus:ring-blue-500"
-                                                                               placeholder="Basisname"
-                                                                               x-init="$nextTick(() => $el.focus())">
-                                                                    </template>
-                                                                </div>
-                                                            </div>
-                                                            <div class="flex items-center space-x-2">
-                                                                <button x-show="entity && !entity.has_override && !entity.editing && entity.needs_rename"
-                                                                            @click="acceptEntitySuggestion(entity)"
-                                                                            class="text-xs text-green-600 hover:text-green-700">
-                                                                        <i class="ri-check-line mr-1"></i>
-                                                                        Vorschlag annehmen
-                                                                    </button>
-                                                                <span x-show="entity && entity.editing" class="text-xs text-gray-500 italic">
-                                                                    Enter zum Speichern, ESC zum Abbrechen
+                                                    <div class="flex-1">
+                                                        <!-- Entity ID Line -->
+                                                        <div class="flex items-center space-x-2 text-sm">
+                                                            <code class="font-mono text-gray-700" x-text="entity ? entity.old_id : ''"></code>
+                                                            <template x-if="entity && entity.needs_rename">
+                                                                <span class="flex items-center text-amber-600">
+                                                                    <i class="ri-arrow-right-line mx-1"></i>
+                                                                    <code class="font-mono font-semibold" x-text="entity ? entity.new_id : ''"></code>
                                                                 </span>
-                                                            </div>
+                                                            </template>
+                                                        </div>
+                                                        
+                                                        <!-- Friendly Name Line -->
+                                                        <div class="flex items-center space-x-2 text-sm mt-1">
+                                                            <span class="text-gray-600" x-text="entity ? entity.current_name : ''"></span>
+                                                            <template x-if="entity && entity.needs_rename">
+                                                                <span class="flex items-center text-green-600">
+                                                                    <i class="ri-arrow-right-line mx-1"></i>
+                                                                    <span class="font-semibold" x-text="entity ? entity.new_name : ''"></span>
+                                                                </span>
+                                                            </template>
                                                         </div>
                                                     </div>
 
-                                                    <!-- Actions -->
-                                                    <div class="mt-3 flex items-center space-x-4">
+                                                    <!-- Status & Actions -->
+                                                    <div class="flex items-center space-x-2">
+                                                        <!-- Basename editing -->
+                                                        <div class="flex items-center space-x-2">
+                                                            <span class="text-xs text-gray-500">Basename:</span>
+                                                            <template x-if="entity && !entity.editing">
+                                                                <code class="text-xs font-mono cursor-pointer hover:underline"
+                                                                      :class="entity ? (entity.has_override ? 'text-blue-700' : 'text-amber-700') : 'text-gray-500'"
+                                                                      x-text="entity ? (entity.has_override ? entity.override_name : getEntitySuggestion(entity)) : ''"
+                                                                      @click="startEntityEdit(entity)"></code>
+                                                            </template>
+                                                            <template x-if="entity && entity.editing">
+                                                                <input type="text"
+                                                                       x-model="entity.override_name"
+                                                                       @keyup.enter="saveEntityEdit(entity)"
+                                                                       @keyup.escape.stop="cancelEntityEdit(entity)"
+                                                                       @blur="handleEntityBlur($event, entity)"
+                                                                       class="text-xs font-mono px-1 py-0.5 border border-amber-500 rounded focus:ring-1 focus:ring-blue-500"
+                                                                       placeholder="Basename"
+                                                                       x-init="$nextTick(() => $el.focus())">
+                                                            </template>
+                                                        </div>
+                                                        
+                                                        <!-- Status badges -->
+                                                        <span x-show="entity && entity.needs_rename" 
+                                                              class="text-xs px-1.5 py-0.5 rounded-full"
+                                                              :class="entity && entity.has_override ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-700'"
+                                                              x-text="entity && entity.has_override ? 'Override' : 'Vorschlag'"></span>
+                                                        <span x-show="entity && !entity.needs_rename && entity.has_maintained_label" 
+                                                              class="text-xs px-1.5 py-0.5 bg-gray-100 text-gray-600 rounded-full">
+                                                            <i class="ri-check-line"></i> Maintained
+                                                        </span>
+                                                        
+                                                        <!-- Dependencies link -->
                                                         <button @click.stop="entity && showDependencies(entity.old_id)"
-                                                                class="text-xs text-blue-600 hover:text-blue-700 flex items-center">
-                                                            <i class="ri-links-line mr-1"></i>
-                                                            Dependencies anzeigen
+                                                                class="text-xs text-blue-600 hover:text-blue-700 ml-auto">
+                                                            <i class="ri-links-line"></i>
                                                         </button>
-                                                        <span x-show="entity && !entity.needs_rename && !entity.has_maintained_label && !entity.editing" class="text-xs text-green-600 flex items-center">
-                                                            <i class="ri-checkbox-circle-line mr-1"></i>
-                                                            Wird nur mit "maintained" Label versehen
-                                                        </span>
-                                                        <span x-show="entity && !entity.needs_rename && entity.has_maintained_label && !entity.editing" class="text-xs text-gray-500 flex items-center">
-                                                            <i class="ri-checkbox-circle-fill mr-1"></i>
-                                                            Bereits mit "maintained" Label
-                                                        </span>
-                                                        <span x-show="entity && entity.selected" class="text-xs text-blue-600 flex items-center ml-auto">
-                                                            <i class="ri-checkbox-circle-fill mr-1"></i>
-                                                            Ausgewählt
-                                                        </span>
                                                     </div>
                                                 </div>
                                             </div>
@@ -487,6 +458,7 @@
                  class="bg-white rounded-lg shadow-sm p-12 text-center">
                 <i class="ri-inbox-line text-4xl text-gray-400 mb-4"></i>
                 <p class="text-gray-600">Keine Entities gefunden für diese Auswahl.</p>
+            </div>
             </div>
         </main>
 
