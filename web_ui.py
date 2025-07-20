@@ -830,13 +830,14 @@ async def _execute_changes_async():
                 if needs_id_change or needs_friendly_name_change:
                     # Check if entity is disabled and if we should enable it
                     entity_reg = renamer_state["restructurer"].entities.get(old_id, {})
-                    is_disabled = entity_reg.get("disabled_by") is not None
+                    disabled_by_value = entity_reg.get("disabled_by")
+                    is_disabled = disabled_by_value is not None
                     should_enable = is_disabled and os.getenv("ENABLE_DISABLED_ENTITIES", "false").lower() == "true"
 
                     # Umbenennen (Entity ID und/oder Friendly Name)
                     logger.info(
                         f"Updating entity: ID change={needs_id_change}, Name change={needs_friendly_name_change}, "
-                        f"is_disabled={is_disabled}, should_enable={should_enable}"
+                        f"is_disabled={is_disabled}, disabled_by={disabled_by_value}, should_enable={should_enable}"
                     )
 
                     if needs_id_change:
@@ -850,7 +851,7 @@ async def _execute_changes_async():
                         # Only change friendly name
                         if should_enable:
                             # Enable and update name in one operation
-                            await entity_registry.update_entity(old_id, name=friendly_name, disabled_by=None)
+                            await entity_registry.update_entity(old_id, name=friendly_name, enable=True)
                             logger.info(f"Enabled entity and updated friendly name: {old_id}")
                         else:
                             await entity_registry.update_entity(old_id, name=friendly_name)

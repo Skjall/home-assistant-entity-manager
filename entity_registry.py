@@ -33,6 +33,7 @@ class EntityRegistry:
         name: Optional[str] = None,
         labels: Optional[List[str]] = None,
         disabled_by: Optional[str] = None,
+        enable: bool = False,
     ) -> Dict[str, Any]:
         message = {"type": "config/entity_registry/update", "entity_id": entity_id}
 
@@ -42,8 +43,14 @@ class EntityRegistry:
             message["name"] = name
         if labels is not None:
             message["labels"] = labels
-        if disabled_by is not None:
+        if enable:
+            # To enable an entity, we need to explicitly set disabled_by to None
+            message["disabled_by"] = None
+        elif disabled_by is not None:
             message["disabled_by"] = disabled_by
+
+        # Log the message we're sending for debugging
+        logger.info(f"Sending entity update message: {message}")
 
         msg_id = await self.ws._send_message(message)
 
@@ -63,12 +70,9 @@ class EntityRegistry:
         friendly_name: Optional[str] = None,
         enable: bool = False,
     ) -> Dict[str, Any]:
-        if enable:
-            return await self.update_entity(
-                entity_id=old_entity_id, new_entity_id=new_entity_id, name=friendly_name, disabled_by=None
-            )
-        else:
-            return await self.update_entity(entity_id=old_entity_id, new_entity_id=new_entity_id, name=friendly_name)
+        return await self.update_entity(
+            entity_id=old_entity_id, new_entity_id=new_entity_id, name=friendly_name, enable=enable
+        )
 
     async def add_labels(self, entity_id: str, labels: List[str]) -> Dict[str, Any]:
         # Stelle sicher, dass alle Labels existieren
@@ -105,7 +109,7 @@ class EntityRegistry:
         return await self.update_entity(entity_id=entity_id, labels=new_labels)
 
     async def enable_entity(self, entity_id: str) -> Dict[str, Any]:
-        return await self.update_entity(entity_id=entity_id, disabled_by=None)
+        return await self.update_entity(entity_id=entity_id, enable=True)
 
     def get_disabled_entities(self) -> List[Dict[str, Any]]:
         return [entity for entity in self.entities.values() if entity.get("disabled_by") is not None]
