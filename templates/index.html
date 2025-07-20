@@ -6,7 +6,7 @@
     <title>Home Assistant Entity Manager</title>
     <link href="static/css/styles.css?v={{ version }}" rel="stylesheet">
     <link href="static/css/remixicon.css?v={{ version }}" rel="stylesheet">
-    <script src="static/js/translations.js"></script>
+    <script src="static/js/translations.js?v={{ version }}"></script>
     <script src="static/js/alpine.min.js" defer></script>
     <script src="static/js/app.js" defer></script>
     <script>
@@ -635,11 +635,18 @@
                     try {
                         // Initialize translations
                         if (window.translations) {
+                            console.log('Translation system found, initializing...');
                             await window.translations.init();
                             this.t = (key, params) => window.translations.t(key, params);
+                            console.log('Translation function ready, testing:', this.t('header.title'));
                             
                             // Update page title
                             document.title = this.t('header.title');
+                            
+                            // Force Alpine to re-evaluate all expressions
+                            this.$nextTick(() => {
+                                console.log('Forcing Alpine refresh');
+                            });
                         } else {
                             console.error('Translation system not loaded');
                             // Keep the fallback function
