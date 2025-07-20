@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """
 Home Assistant Entity Restructurer
-Erstellt komplett neue Entity IDs basierend auf der tatsächlichen Struktur:
-- Raum (Area)
-- Gerät (Device)
-- Entität (Was es ist)
+Creates completely new entity IDs based on the actual structure:
+- Area
+- Device
+- Entity (what it is)
 """
 import logging
 from typing import Dict, List, Optional, Tuple
@@ -27,42 +27,43 @@ class EntityRestructurer:
         self.entities = {}
         self.naming_overrides = naming_overrides or NamingOverrides()
 
-        # Standard Entity-Bezeichnungen
+        # Entity type mappings - using English technical terms
+        # These are now only used as fallbacks since the frontend handles suggestions
         self.entity_types = {
-            "light": "licht",
-            "switch": "schalter",
+            "light": "light",
+            "switch": "switch",
             "sensor": {
-                "temperature": "temperatur",
-                "humidity": "luftfeuchtigkeit",
-                "power": "leistung",
-                "energy": "energie",
-                "battery": "batterie",
-                "illuminance": "helligkeit",
-                "motion": "bewegung",
+                "temperature": "temperature",
+                "humidity": "humidity",
+                "power": "power",
+                "energy": "energy",
+                "battery": "battery",
+                "illuminance": "illuminance",
+                "motion": "motion",
                 "co2": "co2",
-                "pressure": "druck",
-                "voltage": "spannung",
-                "current": "strom",
+                "pressure": "pressure",
+                "voltage": "voltage",
+                "current": "current",
             },
             "binary_sensor": {
-                "motion": "bewegung",
-                "door": "tuer",
-                "window": "fenster",
-                "smoke": "rauch",
-                "moisture": "feuchtigkeit",
-                "connectivity": "verbindung",
+                "motion": "motion",
+                "door": "door",
+                "window": "window",
+                "smoke": "smoke",
+                "moisture": "moisture",
+                "connectivity": "connectivity",
             },
-            "climate": "heizung",
-            "cover": "rollo",
-            "media_player": "player",
+            "climate": "climate",
+            "cover": "cover",
+            "media_player": "media_player",
         }
 
     def normalize_name(self, name: str) -> str:
-        """Normalisiere Namen für Entity IDs (HA-Standard)"""
+        """Normalize names for entity IDs (HA standard)"""
         if not name:
             return ""
 
-        # Umlaute nach HA-Standard
+        # Replace umlauts according to HA standard
         replacements = {
             "ä": "a",
             "ö": "o",
@@ -77,7 +78,7 @@ class EntityRestructurer:
         for old, new in replacements.items():
             normalized = normalized.replace(old, new)
 
-        # Nur alphanumerisch und Unterstriche
+        # Only alphanumeric and underscores
         import re
 
         normalized = re.sub(r"[^a-z0-9]+", "_", normalized)
@@ -87,17 +88,17 @@ class EntityRestructurer:
         return normalized
 
     async def load_structure(self, ws_client=None):
-        """Lade die komplette Struktur von Home Assistant über WebSocket"""
-        # Wenn kein WebSocket Client übergeben wurde, verwende REST API Fallback
+        """Load the complete structure from Home Assistant via WebSocket"""
+        # If no WebSocket client was provided, use REST API fallback
         if not ws_client:
-            logger.warning("Kein WebSocket Client verfügbar, nutze eingeschränkten Modus")
+            logger.warning("No WebSocket client available, using limited mode")
             self.areas = {}
             self.devices = {}
             self.entities = {}
             return
 
         try:
-            # Lade Areas über WebSocket
+            # Load areas via WebSocket
             logger.info("Loading areas via WebSocket...")
             msg_id = await ws_client._send_message({"type": "config/area_registry/list"})
             response = await ws_client._receive_message()
@@ -115,7 +116,7 @@ class EntityRestructurer:
             logger.error(f"Error loading areas via WebSocket: {e}")
 
         try:
-            # Lade Devices über WebSocket
+            # Load devices via WebSocket
             logger.info("Loading devices via WebSocket...")
             msg_id = await ws_client._send_message({"type": "config/device_registry/list"})
             response = await ws_client._receive_message()
@@ -132,7 +133,7 @@ class EntityRestructurer:
         except Exception as e:
             logger.error(f"Error loading devices via WebSocket: {e}")
 
-        # Lade Entity Registry direkt
+        # Load entity registry directly
         try:
             logger.info("Loading entity registry...")
 
@@ -147,7 +148,7 @@ class EntityRestructurer:
                 self.entities = {e["entity_id"]: e for e in entities}
                 logger.info(f"Loaded {len(self.entities)} entities from registry")
 
-                # Zähle maintained Labels
+                # Count maintained labels
                 maintained_count = sum(1 for e in self.entities.values() if "maintained" in e.get("labels", []))
                 if maintained_count > 0:
                     logger.info(f"Found {maintained_count} entities with maintained label")
@@ -160,7 +161,7 @@ class EntityRestructurer:
             self.entities = {}
 
     def get_entity_type(self, entity_id: str, device_class: Optional[str] = None) -> str:
-        """Bestimme den Entity-Typ basierend auf Domain und Device Class"""
+        """Determine entity type based on domain and device class"""
         domain = entity_id.split(".")[0]
 
         if domain in ["light", "switch", "climate", "cover", "media_player"]:
@@ -171,7 +172,7 @@ class EntityRestructurer:
             if isinstance(type_map, dict):
                 return type_map.get(device_class, device_class)
 
-        # Fallback: Versuche aus dem Entity Namen zu raten
+        # Fallback: Try to guess from entity name
         entity_name = entity_id.split(".")[-1].lower()
         for key, value in self.entity_types.get(domain, {}).items():
             if key in entity_name:
@@ -182,7 +183,7 @@ class EntityRestructurer:
     def generate_new_entity_id(self, entity_id: str, state_info: Dict) -> Tuple[str, str]:
         """
         Generiere neue Entity ID basierend auf:
-        1. Area/Raum des Geräts oder der Entity
+        1. Area of the device or entity
         2. Device Name
         3. Entity Type
         """
@@ -192,21 +193,21 @@ class EntityRestructurer:
         entity_reg = self.entities.get(entity_id, {})
         device_id = entity_reg.get("device_id")
 
-        # Bestimme Raum
+        # Determine area
         room = None
-        room_display = None  # Für Friendly Name mit Area Override
+        room_display = None  # For friendly name with area override
         device = None
 
         if device_id and device_id in self.devices:
             device_info = self.devices[device_id]
             device = device_info
 
-            # Raum vom Device
+            # Area from device
             if device_info.get("area_id"):
                 area_id = device_info["area_id"]
                 area = self.areas.get(area_id)
                 if area:
-                    # Prüfe auf Area Override
+                    # Check for area override
                     area_override = self.naming_overrides.get_area_override(area_id)
                     if area_override:
                         room = self.normalize_name(area_override["name"])
@@ -215,12 +216,12 @@ class EntityRestructurer:
                         room = self.normalize_name(area.get("name", ""))
                         room_display = area.get("name", "")
 
-        # Falls kein Raum vom Device, versuche direkt von Entity
+        # If no area from device, try directly from entity
         if not room and entity_reg.get("area_id"):
             area_id = entity_reg["area_id"]
             area = self.areas.get(area_id)
             if area:
-                # Prüfe auf Area Override
+                # Check for area override
                 area_override = self.naming_overrides.get_area_override(area_id)
                 if area_override:
                     room = self.normalize_name(area_override["name"])
@@ -229,93 +230,51 @@ class EntityRestructurer:
                     room = self.normalize_name(area.get("name", ""))
                     room_display = area.get("name", "")
 
-        # Falls immer noch kein Raum, versuche aus Entity ID zu extrahieren
-        if not room:
-            # Known rooms in HA convention
-            known_rooms = [
-                "wohnzimmer",
-                "buro",
-                "kuche",
-                "schlafzimmer",
-                "badezimmer",
-                "kinderzimmer",
-                "eingang",
-                "diele",
-                "balkon",
-                "kammer",
-                "dusche",
-                "keller",
-            ]
-            entity_parts = entity_id.split(".")[-1].split("_")
-            for part in entity_parts:
-                if part in known_rooms:
-                    room = part
-                    break
+        # If still no area, leave it empty
+        # (We don't try to guess from entity ID as that's unreliable and language-specific)
 
-        # Bestimme Gerätenamen
+        # Determine device name
         device_name = ""
         if device:
-            # Prüfe auf Device Override
+            # Check for device override
             device_override = self.naming_overrides.get_device_override(device_id) if device_id else None
             if device_override:
                 device_name = self.normalize_name(device_override["name"])
             else:
-                # Verwende den Device Namen oder Modell
+                # Use device name or model
                 device_name = device.get("name_by_user") or device.get("name") or device.get("model", "")
                 device_name = self.normalize_name(device_name)
         else:
-            # Kein Device gefunden - versuche aus Entity Name zu extrahieren
+            # No device found - use entity name parts as fallback
             entity_parts = entity_id.split(".")[-1].split("_")
-            # Entferne bekannte Raumnamen und Entity-Typen
-            known_rooms = [
-                "wohnzimmer",
-                "buro",
-                "kuche",
-                "schlafzimmer",
-                "badezimmer",
-                "kinderzimmer",
-                "eingang",
-                "diele",
-                "balkon",
-                "kammer",
-                "dusche",
-                "keller",
-            ]
-            filtered_parts = []
-            for part in entity_parts:
-                if part not in known_rooms and part not in [
-                    "licht",
-                    "sensor",
-                    "schalter",
-                ]:
-                    filtered_parts.append(part)
-            if filtered_parts:
-                device_name = "_".join(filtered_parts)
+            # Use all parts as we don't want to make language-specific assumptions
+            if entity_parts:
+                device_name = "_".join(entity_parts)
 
-        # Bestimme Entity-Typ
+        # Determine entity type
         device_class = state_info.get("attributes", {}).get("device_class")
         entity_type = self.get_entity_type(entity_id, device_class)
 
-        # Prüfe auf Entity Override
-        registry_id = entity_reg.get("id", "")  # Die unveränderliche UUID
+        # Check for entity override
+        registry_id = entity_reg.get("id", "")  # The immutable UUID
         entity_override = self.naming_overrides.get_entity_override(registry_id) if registry_id else None
 
-        # Wenn Override vorhanden, verwende ihn als Basis für Entity Type
+        # If override exists, use it as basis for entity type
         if entity_override and entity_override.get("name"):
-            # Override ist der "schöne" Name (z.B. "Deckenlampe")
-            # Normalisiere für Entity ID
+            # Override is the "nice" name (e.g. "Ceiling Light")
+            # Normalize for entity ID
             entity_type = self.normalize_name(entity_override["name"])
 
         # Baue neue Entity ID
         parts = []
 
-        # Prüfe ob device_name bereits mit dem Raum beginnt
+        # Check if device_name already starts with room
         if room and device_name:
-            # Normalisiere beide für Vergleich
+            # Normalize both for comparison
             room_normalized = room.lower()
             device_name_normalized = device_name.lower()
 
-            # Wenn device_name NICHT mit dem Raum beginnt, füge Raum hinzu
+            # If device_name does NOT start with area, add area
             if not device_name_normalized.startswith(room_normalized):
                 parts.append(room)
             parts.append(device_name)
@@ -331,7 +290,7 @@ class EntityRestructurer:
         # Friendly Name
         friendly_parts = []
 
-        # Hole Device Name für Friendly Name
+        # Get device name for friendly name
         device_friendly_name = None
         if device:
             device_override = self.naming_overrides.get_device_override(device_id) if device_id else None
@@ -340,30 +299,30 @@ class EntityRestructurer:
             else:
                 device_friendly_name = device.get("name_by_user") or device.get("name")
 
-        # Prüfe ob Device Name bereits mit Raum beginnt
+        # Check if device name already starts with room
         if room and device_friendly_name:
-            # Verwende room_display wenn vorhanden (mit Area Override), sonst formatiere room
+            # Use room_display if available (with area override), otherwise use room
             if not room_display:
-                room_display = room.replace("u", "ü").replace("o", "ö").replace("a", "ä").title()
+                room_display = room.title()
 
-            # Wenn Device Name nicht mit Raum beginnt, füge Raum hinzu
+            # If device name doesn't start with area, add area
             if not device_friendly_name.lower().startswith(room_display.lower()):
                 friendly_parts.append(room_display)
             friendly_parts.append(device_friendly_name)
         elif room:
-            # Verwende room_display wenn vorhanden (mit Area Override), sonst formatiere room
+            # Use room_display if available (with area override), otherwise use room
             if not room_display:
-                room_display = room.replace("u", "ü").replace("o", "ö").replace("a", "ä")
+                room_display = room
             friendly_parts.append(room_display.title())
         elif device_friendly_name:
             friendly_parts.append(device_friendly_name)
 
-        # Entity Type für Friendly Name
+        # Entity type for friendly name
         if entity_override and entity_override.get("name"):
-            # Verwende den Override direkt (ist bereits "schön")
+            # Use the override directly (already formatted nicely)
             friendly_entity_type = entity_override["name"]
         else:
-            # Konvertiere generierten Typ zu schönem Namen
+            # Convert generated type to nice name
             friendly_entity_type = entity_type.replace("_", " ").title()
 
         friendly_parts.append(friendly_entity_type)
@@ -395,8 +354,8 @@ class EntityRestructurer:
         skip_reviewed: bool = False,
         show_reviewed: bool = False,
     ) -> Dict[str, Tuple[str, str]]:
-        """Analysiere alle Entities und erstelle Mapping"""
-        # Struktur sollte bereits geladen sein - nicht nochmal laden!
+        """Analyze all entities and create mapping"""
+        # Structure should already be loaded - don't load again!
 
         mapping = {}
         skipped_count = 0
@@ -404,7 +363,7 @@ class EntityRestructurer:
         for state in states:
             entity_id = state["entity_id"]
 
-            # Prüfe ob Entity bereits bearbeitet wurde
+            # Check if entity has already been processed
             entity_reg = self.entities.get(entity_id, {})
             has_maintained_label = "maintained" in entity_reg.get("labels", [])
 
@@ -417,8 +376,8 @@ class EntityRestructurer:
 
             new_entity_id, friendly_name = self.generate_new_entity_id(entity_id, state)
 
-            # IMMER ins Mapping aufnehmen, auch wenn sich nichts ändert
-            # Das maintained Label entscheidet, ob es übersprungen wird
+            # ALWAYS include in mapping, even if nothing changes
+            # The maintained label decides whether it's skipped
             mapping[entity_id] = (new_entity_id, friendly_name)
             logger.info(f"Would process: {entity_id} -> {new_entity_id}")
 

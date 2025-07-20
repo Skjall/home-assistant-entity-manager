@@ -12,8 +12,8 @@ A Home Assistant Add-on for standardizing and managing entity names according to
 ## Features
 
 - **Batch Entity Renaming**: Rename multiple entities according to a standardized pattern
-- **Logical Naming Convention**: Follows the pattern `{room}.{device_type}.{location/name}`
-- **Character Normalization**: Automatically normalizes special characters for entity IDs (e.g., `küche` → `kuche`, `büro` → `buro`)
+- **Logical Naming Convention**: Follows the pattern `{area}.{device_type}.{location/name}`
+- **Character Normalization**: Automatically normalizes special characters for entity IDs
 - **Dependency Tracking**: Finds and updates entity references in automations and scenes
 - **Label Management**: Track entity quality and processing status
 - **Web Interface**: Visualize and manage entities through an intuitive UI
@@ -56,7 +56,7 @@ After installing and starting the Add-on:
 8. Click "Execute Changes" to apply
 
 The web interface features:
-- **Area-based navigation**: Browse entities organized by room/area
+- **Area-based navigation**: Browse entities organized by area
 - **Domain filtering**: Filter entities by type (light, switch, sensor, etc.)
 - **Visual indicators**: See which entities need renaming at a glance
 - **Dependency detection**: See which automations and scenes use each entity
@@ -68,13 +68,13 @@ The web interface features:
 
 Entities follow this pattern:
 ```
-{room}.{device_type}.{location/name}
+{area}.{device_type}.{location/name}
 ```
 
 Examples:
-- `buero.licht.decke` - Office ceiling light
-- `wohnzimmer.sensor.temperatur` - Living room temperature sensor
-- `kueche.schalter.steckdose_1` - Kitchen power outlet switch 1
+- `office.light.ceiling` - Office ceiling light
+- `living_room.sensor.temperature` - Living room temperature sensor
+- `kitchen.switch.outlet_1` - Kitchen power outlet switch 1
 
 ## Configuration
 
@@ -86,7 +86,7 @@ Create a `naming_overrides.json` file to customize naming:
 {
   "areas": {
     "area_id_here": {
-      "name": "Custom Room Name"
+      "name": "Custom Area Name"
     }
   },
   "devices": {
