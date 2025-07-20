@@ -2,6 +2,7 @@
 
 [![Alpha](https://img.shields.io/badge/Status-Alpha-red.svg)](https://github.com/Skjall/home-assistant-entity-manager)
 [![GitHub Release](https://img.shields.io/github/release/Skjall/home-assistant-entity-manager.svg?style=flat-square)](https://github.com/Skjall/home-assistant-entity-manager/releases)
+[![Crowdin](https://badges.crowdin.net/home-assistant-entity-manager/localized.svg)](https://crowdin.com/project/home-assistant-entity-manager)
 [![License](https://img.shields.io/github/license/Skjall/home-assistant-entity-manager.svg?style=flat-square)](LICENSE)
 
 A Home Assistant Add-on for standardizing and managing entity names according to a consistent, logical naming convention with an integrated Web UI.
@@ -46,7 +47,7 @@ A Home Assistant Add-on for standardizing and managing entity names according to
 After installing and starting the Add-on:
 
 1. Navigate to the sidebar in Home Assistant
-2. Click on "Entity Manager" 
+2. Click on "Entity Manager"
 3. Select an area from the dropdown
 4. Optionally filter by domain (light, switch, sensor, etc.)
 5. Preview entities that need renaming

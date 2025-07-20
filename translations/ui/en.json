@@ -1,0 +1,66 @@
+{
+  "header": {
+    "title": "Home Assistant Entity Manager",
+    "alpha_badge": "ALPHA",
+    "warning_banner": "ALPHA VERSION - DEVELOPMENT ONLY",
+    "warning_description": "Do not use in production! This add-on is in early development and may cause issues."
+  },
+  "filters": {
+    "select_room": "Select a room...",
+    "all_domains": "All domains",
+    "skip_maintained": "Maintained",
+    "only_changes": "Only changes",
+    "show_disabled": "Disabled",
+    "area_override_label": "Area override:"
+  },
+  "summary": {
+    "entities": "Entities",
+    "devices": "Devices",
+    "to_change": "change",
+    "correct": "correct",
+    "selected": "Selected"
+  },
+  "buttons": {
+    "reload": "Reload page",
+    "select_all": "Select all",
+    "deselect_all": "Deselect all",
+    "execute_changes": "Execute changes"
+  },
+  "entity": {
+    "suggestion": "Suggestion",
+    "override": "Override",
+    "maintained": "Maintained",
+    "disabled": "Disabled",
+    "disabled_by": "Disabled by:",
+    "input_required": "Input required",
+    "basename": "Basename:",
+    "click_to_edit": "-- Click to enter --",
+    "device_rename_hint": "All entities"
+  },
+  "messages": {
+    "loading": "Loading...",
+    "no_entities": "No entities found",
+    "select_area_domain": "Please select a room and domain",
+    "error_loading": "Error loading",
+    "error_saving": "Error saving",
+    "success_saved": "Successfully saved",
+    "executing": "Executing changes...",
+    "disabled_entities_note": "Note: Disabled entities are not enabled by default when renaming. This can be changed in the add-on settings under 'Enable disabled entities'."
+  },
+  "dependencies": {
+    "title": "Dependencies for",
+    "automations": "Automations",
+    "scenes": "Scenes",
+    "scripts": "Scripts",
+    "searching": "Searching for dependencies...",
+    "close": "Close"
+  },
+  "confirmation": {
+    "title": "Are you sure?",
+    "rename_entities": "Rename {count} entities?",
+    "rename_devices": "Rename {count} devices?",
+    "text": "This action cannot be undone. The following changes will be made:",
+    "cancel": "Cancel",
+    "confirm": "Yes, execute"
+  }
+}

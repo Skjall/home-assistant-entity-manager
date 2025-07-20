@@ -1,0 +1,66 @@
+{
+  "header": {
+    "title": "Home Assistant Entity Manager",
+    "alpha_badge": "ALPHA",
+    "warning_banner": "ALPHA VERSION - NUR FÜR ENTWICKLUNG",
+    "warning_description": "Nicht in Produktion verwenden! Dieses Add-on befindet sich in früher Entwicklung und kann Probleme verursachen."
+  },
+  "filters": {
+    "select_room": "Wähle einen Raum...",
+    "all_domains": "Alle Domänen",
+    "skip_maintained": "Maintained",
+    "only_changes": "Nur Änderungen",
+    "show_disabled": "Deaktivierte",
+    "area_override_label": "Area Override:"
+  },
+  "summary": {
+    "entities": "Entities",
+    "devices": "Geräte",
+    "to_change": "ändern",
+    "correct": "korrekt",
+    "selected": "Ausgewählt"
+  },
+  "buttons": {
+    "reload": "Seite neu laden",
+    "select_all": "Alle auswählen",
+    "deselect_all": "Alle abwählen",
+    "execute_changes": "Änderungen ausführen"
+  },
+  "entity": {
+    "suggestion": "Vorschlag",
+    "override": "Override",
+    "maintained": "Maintained",
+    "disabled": "Deaktiviert",
+    "disabled_by": "Deaktiviert von:",
+    "input_required": "Eingabe erforderlich",
+    "basename": "Basename:",
+    "click_to_edit": "-- Klicken zum Eingeben --",
+    "device_rename_hint": "Alle Entities"
+  },
+  "messages": {
+    "loading": "Lade...",
+    "no_entities": "Keine Entities gefunden",
+    "select_area_domain": "Bitte wähle einen Raum und eine Domäne",
+    "error_loading": "Fehler beim Laden",
+    "error_saving": "Fehler beim Speichern",
+    "success_saved": "Erfolgreich gespeichert",
+    "executing": "Führe Änderungen aus...",
+    "disabled_entities_note": "Hinweis: Deaktivierte Entities werden beim Umbenennen standardmäßig nicht aktiviert. Dies kann in den Add-on-Einstellungen unter 'Enable disabled entities' geändert werden."
+  },
+  "dependencies": {
+    "title": "Dependencies für",
+    "automations": "Automatisierungen",
+    "scenes": "Szenen",
+    "scripts": "Skripte",
+    "searching": "Suche nach Dependencies...",
+    "close": "Schließen"
+  },
+  "confirmation": {
+    "title": "Sind Sie sicher?",
+    "rename_entities": "{count} Entities umbenennen?",
+    "rename_devices": "{count} Geräte umbenennen?",
+    "text": "Diese Aktion kann nicht rückgängig gemacht werden. Folgende Änderungen werden durchgeführt:",
+    "cancel": "Abbrechen",
+    "confirm": "Ja, ausführen"
+  }
+}

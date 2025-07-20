@@ -6,6 +6,7 @@
     <title>Home Assistant Entity Manager</title>
     <link href="static/css/styles.css?v={{ version }}" rel="stylesheet">
     <link href="static/css/remixicon.css?v={{ version }}" rel="stylesheet">
+    <script src="static/js/translations.js"></script>
     <script src="static/js/alpine.min.js" defer></script>
     <script src="static/js/app.js" defer></script>
     <script>
@@ -13,13 +14,13 @@
         window.addEventListener('load', function() {
             console.log('Entity Manager loaded');
             console.log('In iframe:', window.self !== window.top);
-            
+
             // Check all stylesheets
             const stylesheets = document.querySelectorAll('link[rel="stylesheet"]');
             stylesheets.forEach((link, index) => {
                 console.log(`Stylesheet ${index}:`, link.href);
             });
-            
+
             // Check if bg-red-600 style exists
             const testDiv = document.createElement('div');
             testDiv.className = 'bg-red-600';
@@ -27,7 +28,7 @@
             const computedStyle = window.getComputedStyle(testDiv);
             console.log('bg-red-600 background color:', computedStyle.backgroundColor);
             document.body.removeChild(testDiv);
-            
+
             // Check if CSS is actually loaded
             fetch('static/css/styles.css')
                 .then(response => response.text())
@@ -36,7 +37,7 @@
                     console.log('Contains bg-red-600:', css.includes('bg-red-600'));
                     console.log('First 200 chars:', css.substring(0, 200));
                     console.log('Last 200 chars:', css.substring(css.length - 200));
-                    
+
                     // Check stylesheets loaded in document
                     for (let sheet of document.styleSheets) {
                         try {
@@ -56,22 +57,22 @@
         <div class="bg-red-600 text-white px-4 py-3">
             <div class="max-w-7xl mx-auto flex items-center justify-center space-x-2">
                 <i class="ri-alert-line text-xl"></i>
-                <span class="font-bold">ALPHA VERSION - DEVELOPMENT ONLY</span>
-                <span class="text-sm">Do not use in production! This add-on is in early development and may cause issues.</span>
+                <span class="font-bold" x-text="t('header.warning_banner')">ALPHA VERSION - DEVELOPMENT ONLY</span>
+                <span class="text-sm" x-text="t('header.warning_description')">Do not use in production! This add-on is in early development and may cause issues.</span>
             </div>
         </div>
-        
+
         <!-- Header -->
         <header class="bg-white shadow-sm border-b">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
                 <div class="flex items-center justify-between">
                     <div class="flex items-center space-x-3">
                         <i class="ri-home-8-line text-2xl text-blue-600"></i>
-                        <h1 class="text-2xl font-bold text-gray-900">Home Assistant Entity Manager</h1>
-                        <span class="text-xs bg-red-100 text-red-800 px-2 py-1 rounded-full font-medium">ALPHA</span>
+                        <h1 class="text-2xl font-bold text-gray-900" x-text="t('header.title')">Home Assistant Entity Manager</h1>
+                        <span class="text-xs bg-red-100 text-red-800 px-2 py-1 rounded-full font-medium" x-text="t('header.alpha_badge')">ALPHA</span>
                         <button @click="window.location.reload()"
                                 class="ml-2 p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-                                title="Seite neu laden">
+                                :title="t ? t('buttons.reload') : 'Seite neu laden'">
                             <i class="ri-refresh-line text-lg"></i>
                         </button>
                     </div>
@@ -86,18 +87,6 @@
                 </div>
             </div>
         </header>
-
-        <!-- Settings Info Banner (only show if disabled entities are visible) -->
-        <div x-show="showDisabled" x-cloak 
-             class="bg-purple-50 border-b border-purple-200">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2">
-                <div class="flex items-center text-sm text-purple-800">
-                    <i class="ri-information-line mr-2"></i>
-                    <span>Hinweis: Deaktivierte Entities werden beim Umbenennen standardmäßig nicht aktiviert. 
-                          Dies kann in den Add-on-Einstellungen unter "Enable disabled entities" geändert werden.</span>
-                </div>
-            </div>
-        </div>
 
         <!-- Fixed Top Section -->
         <div class="bg-white border-b shadow-sm">
@@ -139,7 +128,7 @@
                             <i class="ri-eye-off-line"></i>
                             <span>Maintained</span>
                         </button>
-                        
+
                         <!-- Only changes filter -->
                         <button @click="onlyChanges = !onlyChanges; onFilterChange()"
                                 :class="onlyChanges ? 'bg-amber-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'"
@@ -148,7 +137,7 @@
                             <i class="ri-refresh-line"></i>
                             <span>Nur Änderungen</span>
                         </button>
-                        
+
                         <!-- Show disabled filter -->
                         <button @click="showDisabled = !showDisabled; onFilterChange()"
                                 :class="showDisabled ? 'bg-purple-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'"
@@ -180,7 +169,7 @@
                         </template>
                     </div>
                 </div>
-                
+
                 <!-- Summary Bar (shown when results loaded) -->
                 <div x-show="changes.length > 0 && !loading" x-cloak class="mt-4 pt-4 border-t">
                     <div class="flex items-center justify-between">
@@ -197,7 +186,7 @@
                                 <span class="text-green-600 font-semibold ml-2" x-text="totalEntities - needRenameCount"></span>
                                 <span class="text-xs text-green-600">korrekt</span>
                             </div>
-                            
+
                             <!-- Selection count -->
                             <div x-show="selectedCount > 0 || selectedDeviceCount > 0" class="flex items-center space-x-2 pl-4 border-l">
                                 <i class="ri-checkbox-circle-fill text-blue-600"></i>
@@ -241,7 +230,7 @@
             <div x-show="loading" x-cloak class="flex justify-center py-12">
                 <div class="flex items-center space-x-2">
                     <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                    <span class="text-gray-600">Lade Entities...</span>
+                    <span class="text-gray-600" x-text="t ? t('messages.loading') : 'Lade Entities...'">Lade Entities...</span>
                 </div>
             </div>
 
@@ -395,8 +384,8 @@
                                          :class="[
                                              entity && entity.needs_rename ? 'needs-rename' : 'already-correct',
                                              entity && entity.selected ? 'selected' : '',
-                                             deviceGroup && deviceGroup.device && deviceGroup.device.selected ? 'opacity-50 cursor-not-allowed' : 
-                                             (!entity.needs_rename && entity.has_maintained_label) ? 'opacity-50 cursor-not-allowed' : 
+                                             deviceGroup && deviceGroup.device && deviceGroup.device.selected ? 'opacity-50 cursor-not-allowed' :
+                                             (!entity.needs_rename && entity.has_maintained_label) ? 'opacity-50 cursor-not-allowed' :
                                              (!entity.has_override && (getEntitySuggestion(entity) === 'Sensor' || getEntitySuggestion(entity) === 'Enum')) ? 'cursor-not-allowed' : 'cursor-pointer'
                                          ]"
                                          @click="!(deviceGroup && deviceGroup.device && deviceGroup.device.selected) && entityCanBeSelected(entity) && toggleSelection(entity)">
@@ -406,7 +395,7 @@
                                                 <div class="selection-indicator">
                                                     <div class="w-5 h-5 rounded-full flex items-center justify-center"
                                                          :class="[
-                                                             entity && entity.selected ? 'bg-blue-600' : 
+                                                             entity && entity.selected ? 'bg-blue-600' :
                                                              (deviceGroup && deviceGroup.device && deviceGroup.device.selected) || !entityCanBeSelected(entity) ? 'bg-gray-200' : 'bg-gray-300',
                                                              (deviceGroup && deviceGroup.device && deviceGroup.device.selected) || !entityCanBeSelected(entity) ? 'cursor-not-allowed' : 'cursor-pointer'
                                                          ]">
@@ -428,7 +417,7 @@
                                                                 </span>
                                                             </template>
                                                         </div>
-                                                        
+
                                                         <!-- Friendly Name Line -->
                                                         <div class="flex items-center space-x-2 text-sm mt-1">
                                                             <span class="text-gray-600" x-text="entity ? entity.current_name : ''"></span>
@@ -463,33 +452,33 @@
                                                                        x-init="$nextTick(() => $el.focus())">
                                                             </template>
                                                         </div>
-                                                        
+
                                                         <!-- Status badges -->
-                                                        <button x-show="entity && entity.needs_rename && !entity.has_override && getEntitySuggestion(entity) !== 'Sensor' && getEntitySuggestion(entity) !== 'Enum'" 
+                                                        <button x-show="entity && entity.needs_rename && !entity.has_override && getEntitySuggestion(entity) !== 'Sensor' && getEntitySuggestion(entity) !== 'Enum'"
                                                                 @click.stop="acceptEntitySuggestion(entity)"
                                                                 class="text-xs px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 hover:bg-amber-200 transition-colors"
                                                                 title="Vorschlag übernehmen">
                                                             Vorschlag
                                                         </button>
-                                                        <span x-show="entity && entity.needs_rename && !entity.has_override && (getEntitySuggestion(entity) === 'Sensor' || getEntitySuggestion(entity) === 'Enum')" 
+                                                        <span x-show="entity && entity.needs_rename && !entity.has_override && (getEntitySuggestion(entity) === 'Sensor' || getEntitySuggestion(entity) === 'Enum')"
                                                               class="text-xs px-1.5 py-0.5 rounded-full bg-red-100 text-red-700"
                                                               title="Manueller Basename erforderlich">
                                                             Eingabe erforderlich
                                                         </span>
-                                                        <span x-show="entity && entity.needs_rename && entity.has_override" 
+                                                        <span x-show="entity && entity.needs_rename && entity.has_override"
                                                               class="text-xs px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-700">
                                                             Override
                                                         </span>
-                                                        <span x-show="entity && !entity.needs_rename && entity.has_maintained_label" 
+                                                        <span x-show="entity && !entity.needs_rename && entity.has_maintained_label"
                                                               class="text-xs px-1.5 py-0.5 bg-gray-100 text-gray-600 rounded-full">
                                                             <i class="ri-check-line"></i> Maintained
                                                         </span>
-                                                        <span x-show="entity && entity.disabled_by" 
+                                                        <span x-show="entity && entity.disabled_by"
                                                               class="text-xs px-1.5 py-0.5 bg-purple-100 text-purple-700 rounded-full"
                                                               :title="'Deaktiviert von: ' + (entity ? entity.disabled_by : '')">
                                                             <i class="ri-eye-close-line"></i> Deaktiviert
                                                         </span>
-                                                        
+
                                                         <!-- Dependencies link -->
                                                         <button @click.stop="entity && showDependencies(entity.old_id)"
                                                                 class="text-xs text-blue-600 hover:text-blue-700 ml-auto">
@@ -628,6 +617,7 @@
                 selectedDeviceCount: 0,
                 totalEntities: 0,
                 stats: {},
+                t: null, // Translation function
                 message: '',
                 messageType: 'success',
                 showDependencyModal: false,
@@ -642,6 +632,13 @@
                 savedFilters: null,
 
                 async init() {
+                    // Initialize translations
+                    await window.translations.init();
+                    this.t = (key, params) => window.translations.t(key, params);
+                    
+                    // Update page title
+                    document.title = this.t('header.title');
+                    
                     // Try to restore filters from localStorage (works in iframe)
                     try {
                         const savedFilters = localStorage.getItem('entityManagerFilters');
@@ -669,7 +666,7 @@
                     // Restore saved filters if available
                     if (this.savedFilters) {
                         const { area, domain } = this.savedFilters;
-                        
+
                         if (area && this.areas.find(a => a.name === area)) {
                             this.selectedArea = area;
                             this.onAreaChange(false); // false = don't save to storage yet
@@ -852,6 +849,8 @@
                 },
 
                 getExecuteButtonText() {
+                    if (!this.t) return 'Änderungen ausführen';
+                    
                     let text = [];
                     if (this.selectedDeviceCount > 0) {
                         text.push(`${this.selectedDeviceCount} ${this.selectedDeviceCount === 1 ? 'Gerät' : 'Geräte'}`);
@@ -859,7 +858,12 @@
                     if (this.selectedCount > 0) {
                         text.push(`${this.selectedCount} ${this.selectedCount === 1 ? 'Entity' : 'Entities'}`);
                     }
-                    return text.join(' und ') + ' verarbeiten';
+                    
+                    if (text.length === 0) {
+                        return this.t('buttons.execute_changes');
+                    }
+                    
+                    return text.join(' & ') + ' ' + this.t('buttons.execute_changes').toLowerCase();
                 },
 
                 getDevicePreviewName(device) {
@@ -1108,14 +1112,14 @@
 
                         if (response.ok) {
                             const result = await response.json();
-                            
+
                             // Update device override status
                             device.has_override = result.device_has_override;
-                            
+
                             // Update device needs_rename status
                             const newDeviceName = this.getDevicePreviewName(device);
                             device.needs_rename = device.current_name !== newDeviceName;
-                            
+
                             // Update entity suggestions without reloading
                             if (result.updated_entities && result.updated_entities.length > 0) {
                                 // Find the device group
@@ -1127,29 +1131,29 @@
                                         if (entity) {
                                             // Preserve selection state
                                             const wasSelected = entity.selected;
-                                            
+
                                             // Update entity data
                                             entity.new_id = updatedEntity.new_id;
                                             entity.new_name = updatedEntity.new_name;
                                             entity.needs_rename = updatedEntity.needs_rename;
                                             entity.has_override = updatedEntity.has_override;
-                                            
+
                                             // Restore selection state
                                             entity.selected = wasSelected;
-                                            
+
                                             // If entity can no longer be selected, deselect it
                                             if (!this.entityCanBeSelected(entity)) {
                                                 entity.selected = false;
                                             }
                                         }
                                     });
-                                    
+
                                     // Update counts
                                     this.updateCounts();
                                     this.updateSelectedCount();
                                 }
                             }
-                            
+
                             this.showMessage('Device Override gespeichert', 'success');
                         } else {
                             const error = await response.json();
@@ -1228,7 +1232,7 @@
                     if (!entity.has_override) {
                         // Get the suggestion
                         const suggestion = this.getEntitySuggestion(entity);
-                        
+
                         // Don't pre-fill with "Sensor" or "Enum" - these are technical values
                         if (suggestion === 'Sensor' || suggestion === 'Enum') {
                             entity.override_name = '';
@@ -1305,15 +1309,15 @@
 
                         if (response.ok) {
                             const result = await response.json();
-                            
+
                             // Update entity with backend-calculated values
                             entity.has_override = result.has_override;
                             entity.new_id = result.new_id || entity.new_id;
                             entity.new_name = result.new_friendly_name || entity.new_name;
-                            
+
                             // Update needs_rename flag based on whether the ID changed
                             entity.needs_rename = entity.old_id !== entity.new_id;
-                            
+
                             // Jetzt erst editing auf false setzen
                             entity.editing = false;
 

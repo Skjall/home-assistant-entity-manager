@@ -1,0 +1,24 @@
+{
+  "title": "Entity Manager (Alpha)",
+  "description": "Verwalten und standardisieren Sie Home Assistant Entity-Namen",
+  "configuration": {
+    "log_level": {
+      "name": "Log-Level",
+      "description": "Legt das Logging-Level für die Fehlersuche fest"
+    },
+    "enable_disabled_entities": {
+      "name": "Deaktivierte Entities beim Umbenennen aktivieren",
+      "description": "Aktiviert automatisch deaktivierte Entities, wenn sie umbenannt werden. Falls deaktiviert, bleiben die Entities nach dem Umbenennen in ihrem deaktivierten Zustand."
+    }
+  },
+  "options": {
+    "log_level": {
+      "options": {
+        "debug": "Debug",
+        "info": "Info",
+        "warning": "Warnung",
+        "error": "Fehler"
+      }
+    }
+  }
+}
