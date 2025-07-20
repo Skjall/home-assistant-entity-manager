@@ -472,6 +472,11 @@
                                                               class="text-xs px-1.5 py-0.5 bg-gray-100 text-gray-600 rounded-full">
                                                             <i class="ri-check-line"></i> Maintained
                                                         </span>
+                                                        <span x-show="entity && entity.disabled_by" 
+                                                              class="text-xs px-1.5 py-0.5 bg-purple-100 text-purple-700 rounded-full"
+                                                              :title="'Deaktiviert von: ' + (entity ? entity.disabled_by : '')">
+                                                            <i class="ri-eye-close-line"></i> Deaktiviert
+                                                        </span>
                                                         
                                                         <!-- Dependencies link -->
                                                         <button @click.stop="entity && showDependencies(entity.old_id)"

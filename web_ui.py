@@ -204,6 +204,52 @@ async def load_areas_and_entities():
             # Count for debug
             entities_by_area_count[area_name] = entities_by_area_count.get(area_name, 0) + 1
 
+        # Now process disabled entities from entity registry
+        logger.info("Processing disabled entities from registry...")
+        disabled_count = 0
+        for entity_id, entity_reg in renamer_state["restructurer"].entities.items():
+            # Skip if already processed (enabled entities)
+            if any(
+                entity_id == e["entity_id"]
+                for area_data in entities_by_area.values()
+                for entities in area_data["domains"].values()
+                for e in entities
+            ):
+                continue
+
+            # Check if entity is disabled
+            if entity_reg.get("disabled_by") is not None:
+                disabled_count += 1
+                domain = entity_id.split(".")[0]
+                area_name = "Nicht zugeordnet"
+
+                # Find area from device or entity registry
+                device_id = entity_reg.get("device_id")
+                if device_id and device_id in renamer_state["restructurer"].devices:
+                    device = renamer_state["restructurer"].devices[device_id]
+                    if device.get("area_id") and device["area_id"] in areas_dict:
+                        area_name = areas_dict[device["area_id"]]
+                elif entity_reg.get("area_id") and entity_reg["area_id"] in areas_dict:
+                    area_name = areas_dict[entity_reg["area_id"]]
+
+                # Add to entities_by_area
+                if domain not in entities_by_area[area_name]["domains"]:
+                    entities_by_area[area_name]["domains"][domain] = []
+
+                entities_by_area[area_name]["domains"][domain].append(
+                    {
+                        "entity_id": entity_id,
+                        "friendly_name": entity_reg.get("name") or entity_reg.get("original_name") or entity_id,
+                        "state": "disabled",
+                        "disabled_by": entity_reg.get("disabled_by"),
+                    }
+                )
+
+                # Update count
+                entities_by_area_count[area_name] = entities_by_area_count.get(area_name, 0) + 1
+
+        logger.info(f"Added {disabled_count} disabled entities from registry")
+
         # Debug Output
         logger.info("Entity distribution by area:")
         for area, count in entities_by_area_count.items():
@@ -354,7 +400,7 @@ async def _preview_changes_async():
     domain = data.get("domain")
     skip_reviewed = data.get("skip_reviewed", False)
     only_changes = data.get("only_changes", False)
-    data.get("show_disabled", False)
+    show_disabled = data.get("show_disabled", False)
 
     if not area_name or not domain:
         return jsonify({"error": "Area und Domain müssen angegeben werden"}), 400
@@ -382,11 +428,31 @@ async def _preview_changes_async():
     logger.info(f"Looking for {len(entity_ids)} entities from area {area_name}, domain {domain}")
     logger.debug(f"Entity IDs to find: {entity_ids}")
 
+    # First add all enabled entities from states
     for state in all_states:
         if state["entity_id"] in entity_ids:
             filtered_states.append(state)
 
-    logger.info(f"Found {len(filtered_states)} states matching the entities")
+    # Now add disabled entities if show_disabled is True
+    if show_disabled:
+        # Find entities that were not found in states (these are disabled)
+        found_entity_ids = {s["entity_id"] for s in filtered_states}
+        for entity in entities:
+            entity_id = entity["entity_id"]
+            if entity_id not in found_entity_ids and entity.get("state") == "disabled":
+                # Create a dummy state for disabled entity
+                filtered_states.append(
+                    {
+                        "entity_id": entity_id,
+                        "state": "unavailable",
+                        "attributes": {
+                            "friendly_name": entity.get("friendly_name", entity_id),
+                            "disabled_by": entity.get("disabled_by", "unknown"),
+                        },
+                    }
+                )
+
+    logger.info(f"Found {len(filtered_states)} states matching the entities (including disabled: {show_disabled})")
 
     # Stelle sicher, dass der Restructurer die aktuelle Struktur hat
     base_url = os.getenv("HA_URL")
@@ -458,6 +524,7 @@ async def _preview_changes_async():
                 "registry_id": registry_id,
                 "has_override": entity_override is not None,
                 "override_name": (entity_override.get("name") if entity_override else None),
+                "disabled_by": entity_reg.get("disabled_by"),  # Add disabled status
             }
 
             # Gruppiere nach Device
