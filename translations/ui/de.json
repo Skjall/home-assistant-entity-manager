@@ -14,7 +14,7 @@
     "area_override_label": "Bereichs-Override:"
   },
   "summary": {
-    "entities": "Entities",
+    "entities": "Entitäten",
     "devices": "Geräte",
     "to_change": "ändern",
     "correct": "korrekt",
@@ -40,10 +40,10 @@
     "input_required": "Eingabe erforderlich",
     "basename": "Basename:",
     "click_to_edit": "-- Klicken zum Eingeben --",
-    "device_rename_hint": "Alle Entities",
-    "entities_without_device": "Entities ohne Gerät",
-    "entities_without_device_desc": "Diese Entities sind keinem Gerät zugeordnet",
-    "no_entities_found": "Keine Entities gefunden für diese Auswahl",
+    "device_rename_hint": "Alle Entitäten",
+    "entities_without_device": "Entitäten ohne Gerät",
+    "entities_without_device_desc": "Diese Entitäten sind keinem Gerät zugeordnet",
+    "no_entities_found": "Keine Entitäten gefunden für diese Auswahl",
     "open_device_in_ha": "Gerät in Home Assistant öffnen",
     "accept_suggestion": "Vorschlag übernehmen",
     "selected_badge": "Ausgewählt",
@@ -54,13 +54,13 @@
   },
   "messages": {
     "loading": "Lade...",
-    "no_entities": "Keine Entities gefunden",
+    "no_entities": "Keine Entitäten gefunden",
     "select_area_domain": "Bitte wähle einen Bereich und eine Domäne",
     "error_loading": "Fehler beim Laden",
     "error_saving": "Fehler beim Speichern",
     "success_saved": "Erfolgreich gespeichert",
     "executing": "Führe Änderungen aus...",
-    "disabled_entities_note": "Hinweis: Deaktivierte Entities werden beim Umbenennen standardmäßig nicht aktiviert. Dies kann in den Add-on-Einstellungen unter 'Enable disabled entities' geändert werden.",
+    "disabled_entities_note": "Hinweis: Deaktivierte Entitäten werden beim Umbenennen standardmäßig nicht aktiviert. Dies kann in den Add-on-Einstellungen unter 'Enable disabled entities' geändert werden.",
     "error_loading_areas": "Fehler beim Laden der Areas",
     "device_override_saved": "Device Override gespeichert",
     "error_saving_device_override": "Fehler beim Speichern des Device Override",
@@ -73,25 +73,25 @@
     "no_area_selected": "Kein Bereich ausgewählt",
     "error_saving_area_override": "Fehler beim Speichern des Area Override",
     "error_executing_changes": "Fehler beim Ausführen der Änderungen",
-    "error_loading_dependencies": "Fehler beim Laden der Dependencies",
+    "error_loading_dependencies": "Fehler beim Laden der Abhängigkeiten",
     "error": "Fehler",
     "devices_label": "Geräte",
-    "entities_label": "Entities",
+    "entities_label": "Entitäten",
     "successful": "erfolgreich",
     "skipped": "übersprungen",
     "failed": "Fehler",
-    "dependency_warnings": "Dependency-Warnungen",
-    "dependencies_update_warning_title": "Dependencies konnten nicht automatisch aktualisiert werden",
-    "dependencies_update_warning_desc": "Bitte prüfe folgende Entities manuell in Home Assistant:"
+    "dependency_warnings": "Abhängigkeits-Warnungen",
+    "dependencies_update_warning_title": "Abhängigkeiten konnten nicht automatisch aktualisiert werden",
+    "dependencies_update_warning_desc": "Bitte prüfe folgende Entitäten manuell in Home Assistant:"
   },
   "dependencies": {
-    "title": "Dependencies für",
+    "title": "Abhängigkeiten für",
     "automations": "Automatisierungen",
     "scenes": "Szenen",
     "scripts": "Skripte",
-    "searching": "Suche nach Dependencies...",
+    "searching": "Suche nach Abhängigkeiten...",
     "close": "Schließen",
-    "no_dependencies": "Keine Dependencies gefunden"
+    "no_dependencies": "Keine Abhängigkeiten gefunden"
   },
   "device": {
     "rename_device": "Gerät umbenennen",
@@ -102,12 +102,12 @@
     "new_name": "Neuer Name"
   },
   "units": {
-    "entities": "Entities",
+    "entities": "Entitäten",
     "devices": "Geräte"
   },
   "confirmation": {
     "title": "Sind Sie sicher?",
-    "rename_entities": "{count} Entities umbenennen?",
+    "rename_entities": "{count} Entitäten umbenennen?",
     "rename_devices": "{count} Geräte umbenennen?",
     "text": "Diese Aktion kann nicht rückgängig gemacht werden. Folgende Änderungen werden durchgeführt:",
     "cancel": "Abbrechen",
