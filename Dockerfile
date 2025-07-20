@@ -41,6 +41,8 @@ COPY label_registry.py /app/
 COPY naming_overrides.py /app/
 COPY scene_updater.py /app/
 COPY templates/ /app/templates/
+COPY static/js/translations.js /app/static/js/
+COPY translations/ /app/translations/
 WORKDIR /app
 
 # Copy optional naming_overrides.json if it exists
