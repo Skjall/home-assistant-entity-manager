@@ -749,6 +749,18 @@ async def _execute_changes_async():
 
                         if entity_id != new_entity_id:
                             try:
+                                # Check if entity is disabled and if we should enable it
+                                entity_reg = renamer_state["restructurer"].entities.get(entity_id, {})
+                                is_disabled = entity_reg.get("disabled_by") is not None
+                                should_enable = (
+                                    is_disabled and os.getenv("ENABLE_DISABLED_ENTITIES", "false").lower() == "true"
+                                )
+
+                                # If entity is disabled and setting is enabled, enable it first
+                                if should_enable:
+                                    logger.info(f"Enabling disabled entity (device rename): {entity_id}")
+                                    await entity_registry.enable_entity(entity_id)
+
                                 await entity_registry.rename_entity(entity_id, new_entity_id, new_friendly_name)
                                 await entity_registry.add_labels(new_entity_id, ["maintained"])
 
@@ -803,10 +815,22 @@ async def _execute_changes_async():
                 needs_friendly_name_change = current_friendly_name != friendly_name
 
                 if needs_id_change or needs_friendly_name_change:
+                    # Check if entity is disabled and if we should enable it
+                    entity_reg = renamer_state["restructurer"].entities.get(old_id, {})
+                    is_disabled = entity_reg.get("disabled_by") is not None
+                    should_enable = is_disabled and os.getenv("ENABLE_DISABLED_ENTITIES", "false").lower() == "true"
+
                     # Umbenennen (Entity ID und/oder Friendly Name)
                     logger.info(
-                        f"Updating entity: ID change={needs_id_change}, Name change={needs_friendly_name_change}"
+                        f"Updating entity: ID change={needs_id_change}, Name change={needs_friendly_name_change}, "
+                        f"is_disabled={is_disabled}, should_enable={should_enable}"
                     )
+
+                    # If entity is disabled and setting is enabled, enable it first
+                    if should_enable:
+                        logger.info(f"Enabling disabled entity: {old_id}")
+                        await entity_registry.enable_entity(old_id)
+
                     if needs_id_change:
                         await entity_registry.rename_entity(old_id, new_id, friendly_name)
                         # Label setzen

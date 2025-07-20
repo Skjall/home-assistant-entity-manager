@@ -1,6 +1,6 @@
 {
   "name": "Entity Manager (Alpha)",
-  "version": "0.1.44-alpha",
+  "version": "0.1.45-alpha",
   "slug": "entity_manager",
   "description": "⚠️ ALPHA VERSION - DO NOT USE IN PRODUCTION ⚠️ Manage and standardize Home Assistant entity names",
   "arch": ["armhf", "armv7", "aarch64", "amd64", "i386"],
@@ -22,10 +22,12 @@
     "5000/tcp": "Web interface (Not required with Ingress)"
   },
   "options": {
-    "log_level": "info"
+    "log_level": "info",
+    "enable_disabled_entities": false
   },
   "schema": {
-    "log_level": "list(debug|info|warning|error)?"
+    "log_level": "list(debug|info|warning|error)?",
+    "enable_disabled_entities": "bool?"
   },
   "environment": {
     "HA_URL": "http://supervisor/core",
