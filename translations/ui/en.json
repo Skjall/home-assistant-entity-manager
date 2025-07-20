@@ -154,6 +154,7 @@
     "humidifier": "Humidifier",
     "remote": "Remote",
     "siren": "Siren",
-    "alarm_control_panel": "Alarm Panel"
+    "alarm_control_panel": "Alarm Panel",
+    "image": "Image"
   }
 }

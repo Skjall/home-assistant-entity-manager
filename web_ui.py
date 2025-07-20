@@ -768,12 +768,13 @@ async def _execute_changes_async():
                                     is_disabled and os.getenv("ENABLE_DISABLED_ENTITIES", "false").lower() == "true"
                                 )
 
-                                # If entity is disabled and setting is enabled, enable it first
-                                if should_enable:
-                                    logger.info(f"Enabling disabled entity (device rename): {entity_id}")
-                                    await entity_registry.enable_entity(entity_id)
+                                # Rename entity and enable if needed
+                                await entity_registry.rename_entity(
+                                    entity_id, new_entity_id, new_friendly_name, enable=should_enable
+                                )
 
-                                await entity_registry.rename_entity(entity_id, new_entity_id, new_friendly_name)
+                                if should_enable:
+                                    logger.info(f"Enabled and renamed disabled entity: {entity_id} -> {new_entity_id}")
                                 await entity_registry.add_labels(new_entity_id, ["maintained"])
 
                                 # Update dependencies
@@ -838,18 +839,21 @@ async def _execute_changes_async():
                         f"is_disabled={is_disabled}, should_enable={should_enable}"
                     )
 
-                    # If entity is disabled and setting is enabled, enable it first
-                    if should_enable:
-                        logger.info(f"Enabling disabled entity: {old_id}")
-                        await entity_registry.enable_entity(old_id)
-
                     if needs_id_change:
-                        await entity_registry.rename_entity(old_id, new_id, friendly_name)
+                        # Rename entity and enable if needed in a single operation
+                        await entity_registry.rename_entity(old_id, new_id, friendly_name, enable=should_enable)
+                        if should_enable:
+                            logger.info(f"Enabled and renamed disabled entity: {old_id} -> {new_id}")
                         # Label setzen
                         await entity_registry.add_labels(new_id, ["maintained"])
                     else:
                         # Only change friendly name
-                        await entity_registry.update_entity(old_id, name=friendly_name)
+                        if should_enable:
+                            # Enable and update name in one operation
+                            await entity_registry.update_entity(old_id, name=friendly_name, disabled_by=None)
+                            logger.info(f"Enabled entity and updated friendly name: {old_id}")
+                        else:
+                            await entity_registry.update_entity(old_id, name=friendly_name)
                         # Label setzen
                         await entity_registry.add_labels(old_id, ["maintained"])
 

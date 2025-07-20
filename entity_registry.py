@@ -61,8 +61,14 @@ class EntityRegistry:
         old_entity_id: str,
         new_entity_id: str,
         friendly_name: Optional[str] = None,
+        enable: bool = False,
     ) -> Dict[str, Any]:
-        return await self.update_entity(entity_id=old_entity_id, new_entity_id=new_entity_id, name=friendly_name)
+        if enable:
+            return await self.update_entity(
+                entity_id=old_entity_id, new_entity_id=new_entity_id, name=friendly_name, disabled_by=None
+            )
+        else:
+            return await self.update_entity(entity_id=old_entity_id, new_entity_id=new_entity_id, name=friendly_name)
 
     async def add_labels(self, entity_id: str, labels: List[str]) -> Dict[str, Any]:
         # Stelle sicher, dass alle Labels existieren
