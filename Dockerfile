@@ -16,6 +16,7 @@ COPY package.json package-lock.json postcss.config.js tailwind.config.js ./
 COPY src/ ./src/
 COPY scripts/ ./scripts/
 COPY templates/ ./templates/
+COPY static/ ./static/
 RUN npm ci && \
     npm run build && \
     mkdir -p /app/static && \
@@ -41,7 +42,6 @@ COPY label_registry.py /app/
 COPY naming_overrides.py /app/
 COPY scene_updater.py /app/
 COPY templates/ /app/templates/
-COPY static/js/translations.js /app/static/js/
 COPY translations/ /app/translations/
 WORKDIR /app
 
