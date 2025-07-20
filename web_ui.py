@@ -293,6 +293,12 @@ def serve_font_workaround(filename):
     return send_from_directory("static/css", filename)
 
 
+@app.route("/static/js/<path:filename>")
+def serve_js(filename):
+    """Serve JavaScript files"""
+    return send_from_directory("static/js", filename)
+
+
 @app.route("/static/translations/<path:filename>")
 def serve_translations(filename):
     """Serve translation files"""
