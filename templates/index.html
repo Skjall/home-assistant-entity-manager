@@ -617,7 +617,7 @@
                 selectedDeviceCount: 0,
                 totalEntities: 0,
                 stats: {},
-                t: null, // Translation function
+                t: (key, params) => key, // Translation function with fallback
                 message: '',
                 messageType: 'success',
                 showDependencyModal: false,
@@ -632,12 +632,22 @@
                 savedFilters: null,
 
                 async init() {
-                    // Initialize translations
-                    await window.translations.init();
-                    this.t = (key, params) => window.translations.t(key, params);
-                    
-                    // Update page title
-                    document.title = this.t('header.title');
+                    try {
+                        // Initialize translations
+                        if (window.translations) {
+                            await window.translations.init();
+                            this.t = (key, params) => window.translations.t(key, params);
+                            
+                            // Update page title
+                            document.title = this.t('header.title');
+                        } else {
+                            console.error('Translation system not loaded');
+                            // Keep the fallback function
+                        }
+                    } catch (error) {
+                        console.error('Error initializing translations:', error);
+                        // Keep the fallback function
+                    }
                     
                     // Try to restore filters from localStorage (works in iframe)
                     try {

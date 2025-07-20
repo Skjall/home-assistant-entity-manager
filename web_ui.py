@@ -296,7 +296,7 @@ def serve_font_workaround(filename):
 @app.route("/static/translations/<path:filename>")
 def serve_translations(filename):
     """Serve translation files"""
-    return send_from_directory("translations", filename)
+    return send_from_directory("translations/ui", filename)
 
 
 @app.route("/test/css-info")
