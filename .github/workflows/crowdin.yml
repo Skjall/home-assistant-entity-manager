@@ -37,5 +37,5 @@ jobs:
           pull_request_body: "New translations from Crowdin"
           pull_request_labels: "translations, crowdin"
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
           CROWDIN_TOKEN: ${{ secrets.CROWDIN_TOKEN }}
