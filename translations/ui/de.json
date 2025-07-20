@@ -146,6 +146,7 @@
     "humidifier": "Luftbefeuchter",
     "remote": "Fernbedienung",
     "siren": "Sirene",
-    "alarm_control_panel": "Alarmzentrale"
+    "alarm_control_panel": "Alarmzentrale",
+    "image": "Image"
   }
 }
