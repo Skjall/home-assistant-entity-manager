@@ -1,7 +1,7 @@
 {
   "header": {
-    "title": "Home Assistant Entity Manager",
-    "alpha_badge": "ALPHA",
+    "title": "Entity Manager",
+    "version_badge": "ALPHA",
     "warning_banner": "ALPHA VERSION - DEVELOPMENT ONLY",
     "warning_description": "Do not use in production! This add-on is in early development and may cause issues."
   },
@@ -22,7 +22,7 @@
   },
   "buttons": {
     "reload": "Reload page",
-    "select_all": "Select all", 
+    "select_all": "Select all",
     "select_none": "Select none",
     "deselect_all": "Deselect all",
     "execute_changes": "Execute changes",

@@ -1,7 +1,7 @@
 {
   "header": {
     "title": "Home Assistant Entity Manager",
-    "alpha_badge": "ALPHA",
+    "version_badge": "ALPHA",
     "warning_banner": "ALPHA VERSION - NUR FÜR ENTWICKLUNG",
     "warning_description": "Nicht in Produktion verwenden! Dieses Add-on befindet sich in früher Entwicklung und kann Probleme verursachen."
   },

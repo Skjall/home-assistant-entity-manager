@@ -69,7 +69,7 @@
                     <div class="flex items-center space-x-3">
                         <i class="ri-home-8-line text-2xl text-blue-600"></i>
                         <h1 class="text-2xl font-bold text-gray-900" x-text="t('header.title')">Home Assistant Entity Manager</h1>
-                        <span class="text-xs bg-red-100 text-red-800 px-2 py-1 rounded-full font-medium" x-text="t('header.alpha_badge')">ALPHA</span>
+                        <span class="text-xs bg-red-100 text-red-800 px-2 py-1 rounded-full font-medium" x-text="t('header.version_badge')">ALPHA</span>
                         <button @click="window.location.reload()"
                                 class="ml-2 p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
                                 :title="t ? t('buttons.reload') : 'Seite neu laden'">
@@ -639,10 +639,10 @@
                             await window.translations.init();
                             this.t = (key, params) => window.translations.t(key, params);
                             console.log('Translation function ready, testing:', this.t('header.title'));
-                            
+
                             // Update page title
                             document.title = this.t('header.title');
-                            
+
                             // Force Alpine to re-evaluate all expressions
                             this.$nextTick(() => {
                                 console.log('Forcing Alpine refresh');
@@ -655,7 +655,7 @@
                         console.error('Error initializing translations:', error);
                         // Keep the fallback function
                     }
-                    
+
                     // Try to restore filters from localStorage (works in iframe)
                     try {
                         const savedFilters = localStorage.getItem('entityManagerFilters');
@@ -867,22 +867,22 @@
 
                 getExecuteButtonText() {
                     if (!this.t) return 'Execute changes';
-                    
+
                     let text = [];
                     if (this.selectedDeviceCount > 0) {
-                        const deviceText = this.selectedDeviceCount === 1 
-                            ? this.t('device.count_singular') 
+                        const deviceText = this.selectedDeviceCount === 1
+                            ? this.t('device.count_singular')
                             : this.t('device.count_plural');
                         text.push(`${this.selectedDeviceCount} ${deviceText}`);
                     }
                     if (this.selectedCount > 0) {
                         text.push(`${this.selectedCount} ${this.t('units.entities')}`);
                     }
-                    
+
                     if (text.length === 0) {
                         return this.t('buttons.execute_changes');
                     }
-                    
+
                     return text.join(' & ') + ' ' + this.t('buttons.execute_changes').toLowerCase();
                 },
 
