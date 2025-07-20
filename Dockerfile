@@ -16,7 +16,10 @@ COPY package.json package-lock.json postcss.config.js tailwind.config.js ./
 COPY src/ ./src/
 COPY scripts/ ./scripts/
 COPY templates/ ./templates/
-COPY static/ ./static/
+# Copy existing static assets (fonts, translations.js, etc)
+RUN mkdir -p static/js static/fonts
+COPY static/js/translations.js ./static/js/
+COPY static/fonts/ ./static/fonts/
 RUN npm ci && \
     npm run build && \
     mkdir -p /app/static && \
