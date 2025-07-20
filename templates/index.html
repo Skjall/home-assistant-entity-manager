@@ -386,7 +386,7 @@
                                              entity && entity.selected ? 'selected' : '',
                                              deviceGroup && deviceGroup.device && deviceGroup.device.selected ? 'opacity-50 cursor-not-allowed' :
                                              (!entity.needs_rename && entity.has_maintained_label) ? 'opacity-50 cursor-not-allowed' :
-                                             (!entity.has_override && (getEntitySuggestion(entity) === 'Sensor' || getEntitySuggestion(entity) === 'Enum')) ? 'cursor-not-allowed' : 'cursor-pointer'
+                                             (!entity.has_override && entityRequiresManualBasename(entity)) ? 'cursor-not-allowed' : 'cursor-pointer'
                                          ]"
                                          @click="!(deviceGroup && deviceGroup.device && deviceGroup.device.selected) && entityCanBeSelected(entity) && toggleSelection(entity)">
                                         <div class="p-3">
@@ -410,7 +410,7 @@
                                                         <!-- Entity ID Line -->
                                                         <div class="flex items-center space-x-2 text-sm">
                                                             <code class="font-mono text-gray-700" x-text="entity ? entity.old_id : ''"></code>
-                                                            <template x-if="entity && entity.needs_rename && (entity.has_override || (getEntitySuggestion(entity) !== 'Sensor' && getEntitySuggestion(entity) !== 'Enum'))">
+                                                            <template x-if="entity && entity.needs_rename && (entity.has_override || !entityRequiresManualBasename(entity))">
                                                                 <span class="flex items-center text-amber-600">
                                                                     <i class="ri-arrow-right-line mx-1"></i>
                                                                     <code class="font-mono font-semibold" x-text="entity ? entity.new_id : ''"></code>
@@ -421,7 +421,7 @@
                                                         <!-- Friendly Name Line -->
                                                         <div class="flex items-center space-x-2 text-sm mt-1">
                                                             <span class="text-gray-600" x-text="entity ? entity.current_name : ''"></span>
-                                                            <template x-if="entity && entity.needs_rename && (entity.has_override || (getEntitySuggestion(entity) !== 'Sensor' && getEntitySuggestion(entity) !== 'Enum'))">
+                                                            <template x-if="entity && entity.needs_rename && (entity.has_override || !entityRequiresManualBasename(entity))">
                                                                 <span class="flex items-center text-green-600">
                                                                     <i class="ri-arrow-right-line mx-1"></i>
                                                                     <span class="font-semibold" x-text="entity ? entity.new_name : ''"></span>
@@ -437,8 +437,8 @@
                                                             <span class="text-xs text-gray-500" x-text="t('entity.basename')"></span>
                                                             <template x-if="entity && !entity.editing">
                                                                 <code class="text-xs font-mono cursor-pointer hover:underline"
-                                                                      :class="entity ? (entity.has_override ? 'text-blue-700' : ((getEntitySuggestion(entity) === 'Sensor' || getEntitySuggestion(entity) === 'Enum') ? 'text-red-600' : 'text-amber-700')) : 'text-gray-500'"
-                                                                      x-text="entity ? (entity.has_override ? entity.override_name : ((getEntitySuggestion(entity) === 'Sensor' || getEntitySuggestion(entity) === 'Enum') ? t('entity.click_to_edit') : getEntitySuggestion(entity))) : ''"
+                                                                      :class="entity ? (entity.has_override ? 'text-blue-700' : (entityRequiresManualBasename(entity) ? 'text-red-600' : 'text-amber-700')) : 'text-gray-500'"
+                                                                      x-text="entity ? (entity.has_override ? entity.override_name : (entityRequiresManualBasename(entity) ? t('entity.click_to_edit') : getEntitySuggestion(entity))) : ''"
                                                                       @click="startEntityEdit(entity)"></code>
                                                             </template>
                                                             <template x-if="entity && entity.editing">
@@ -454,13 +454,13 @@
                                                         </div>
 
                                                         <!-- Status badges -->
-                                                        <button x-show="entity && entity.needs_rename && !entity.has_override && getEntitySuggestion(entity) !== 'Sensor' && getEntitySuggestion(entity) !== 'Enum'"
+                                                        <button x-show="entity && entity.needs_rename && !entity.has_override && !entityRequiresManualBasename(entity)"
                                                                 @click.stop="acceptEntitySuggestion(entity)"
                                                                 class="text-xs px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 hover:bg-amber-200 transition-colors"
                                                                 :title="t('entity.accept_suggestion')">
                                                             <span x-text="t('entity.suggestion')"></span>
                                                         </button>
-                                                        <span x-show="entity && entity.needs_rename && !entity.has_override && (getEntitySuggestion(entity) === 'Sensor' || getEntitySuggestion(entity) === 'Enum')"
+                                                        <span x-show="entity && entity.needs_rename && !entity.has_override && entityRequiresManualBasename(entity)"
                                                               class="text-xs px-1.5 py-0.5 rounded-full bg-red-100 text-red-700"
                                                               title="Manueller Basename erforderlich">
                                                             <span x-text="t('entity.input_required')"></span>
@@ -902,18 +902,61 @@
                 },
 
                 getEntitySuggestion(entity) {
-                    if (!entity || !entity.new_id) return 'Sensor';
+                    if (!entity || !entity.new_id) return '';
 
-                    // Extrahiere einen schönen Namen aus der Entity ID
+                    // Get the entity domain (first part before the dot)
                     const idParts = entity.new_id.split('.');
+                    const domain = idParts[0];
+                    
+                    // First, try to get a translated name for the domain
+                    const domainTranslation = this.t(`entity_types.${domain}`);
+                    
+                    // If we have a translation for this domain and it's not just the key itself
+                    if (domainTranslation && domainTranslation !== `entity_types.${domain}`) {
+                        // For some domains, we might want to extract more specific info from the entity ID
+                        if (idParts.length > 1 && ['light', 'switch', 'cover', 'fan', 'lock'].includes(domain)) {
+                            const entityPart = idParts[1];
+                            const underscoreParts = entityPart.split('_');
+                            
+                            // Try to find a meaningful suffix that describes the specific type
+                            let specificType = underscoreParts[underscoreParts.length - 1];
+                            
+                            // If the last part is just the domain name, use the domain translation
+                            if (specificType === domain || specificType === domain + 's') {
+                                return domainTranslation;
+                            }
+                            
+                            // Try to get a translation for the specific type
+                            const specificTranslation = this.t(`entity_types.${specificType}`);
+                            if (specificTranslation && specificTranslation !== `entity_types.${specificType}`) {
+                                return specificTranslation;
+                            }
+                            
+                            // Otherwise, capitalize and return the specific type
+                            return specificType.charAt(0).toUpperCase() + specificType.slice(1);
+                        }
+                        
+                        // For other domains, just return the domain translation
+                        return domainTranslation;
+                    }
+                    
+                    // If no translation found, return empty string for domains that typically need manual input
+                    // This can be configured in the translation file by not providing a translation
+                    
+                    // Fallback: try to extract something meaningful from the entity ID
                     if (idParts.length > 1) {
                         const entityPart = idParts[1];
                         const underscoreParts = entityPart.split('_');
-                        const entityType = underscoreParts[underscoreParts.length - 1];
-                        // Konvertiere zu schönem Namen mit Großbuchstaben
+                        let entityType = underscoreParts[underscoreParts.length - 1];
+                        
+                        if (entityType === domain && underscoreParts.length > 1) {
+                            entityType = underscoreParts[underscoreParts.length - 2];
+                        }
+                        
                         return entityType.charAt(0).toUpperCase() + entityType.slice(1);
                     }
-                    return 'Sensor';
+                    
+                    return '';
                 },
 
                 getEntityPreviewId(entity) {
@@ -1048,16 +1091,29 @@
                     return parts.join(' ');
                 },
 
+                entityRequiresManualBasename(entity) {
+                    if (!entity || !entity.new_id) return false;
+                    
+                    const idParts = entity.new_id.split('.');
+                    const domain = idParts[0];
+                    
+                    // Get the list of domains requiring manual basename from translations
+                    const requiresManual = this.t('entity_types_requiring_manual_basename');
+                    if (Array.isArray(requiresManual)) {
+                        return requiresManual.includes(domain);
+                    }
+                    
+                    // Fallback to empty suggestion check
+                    return this.getEntitySuggestion(entity) === '';
+                },
+
                 entityCanBeSelected(entity) {
                     // Entity can be selected if:
                     // 1. It needs renaming (ID or name change), OR
                     // 2. It doesn't have the maintained label yet
-                    // BUT NOT if the suggestion is "Sensor" or "Enum" (unless it has an override)
-                    if (!entity.has_override) {
-                        const suggestion = this.getEntitySuggestion(entity);
-                        if (suggestion === 'Sensor' || suggestion === 'Enum') {
-                            return false;
-                        }
+                    // BUT NOT if it requires manual basename (unless it has an override)
+                    if (!entity.has_override && this.entityRequiresManualBasename(entity)) {
+                        return false;
                     }
                     return entity.needs_rename || !entity.has_maintained_label;
                 },
@@ -1248,28 +1304,14 @@
                     // Speichere den Original-Wert für Cancel
                     entity._original_override_name = entity.override_name;
 
-                    // Wenn ein Override existiert, zeige diesen, sonst extrahiere nur den Entity-Typ
+                    // Wenn ein Override existiert, zeige diesen, sonst prüfe ob manueller Basename erforderlich
                     if (!entity.has_override) {
-                        // Get the suggestion
-                        const suggestion = this.getEntitySuggestion(entity);
-
-                        // Don't pre-fill with "Sensor" or "Enum" - these are technical values
-                        if (suggestion === 'Sensor' || suggestion === 'Enum') {
+                        if (this.entityRequiresManualBasename(entity)) {
+                            // Clear field for manual input
                             entity.override_name = '';
                         } else {
-                            // Schlage einen schönen Namen vor basierend auf dem Entity-Typ
-                            // z.B. "light.diele_deckenspot_licht" -> "Licht"
-                            const idParts = entity.new_id.split('.');
-                            if (idParts.length > 1) {
-                                const entityPart = idParts[1]; // "diele_deckenspot_licht"
-                                const underscoreParts = entityPart.split('_');
-                                // Nimm den letzten Teil als Entity-Typ und mache ihn schön
-                                const entityType = underscoreParts[underscoreParts.length - 1];
-                                // Konvertiere zu schönem Namen
-                                entity.override_name = entityType.charAt(0).toUpperCase() + entityType.slice(1);
-                            } else {
-                                entity.override_name = entity.new_id;
-                            }
+                            // Use the suggestion from getEntitySuggestion
+                            entity.override_name = this.getEntitySuggestion(entity);
                         }
                     }
 

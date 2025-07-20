@@ -112,5 +112,50 @@
   "units": {
     "entities": "Entitäten",
     "devices": "Geräte"
-  }
+  },
+  "entity_types": {
+    "light": "Licht",
+    "switch": "Schalter",
+    "sensor": "Sensor",
+    "binary_sensor": "Binärsensor",
+    "cover": "Abdeckung",
+    "climate": "Klima",
+    "fan": "Ventilator",
+    "lock": "Schloss",
+    "media_player": "Mediaplayer",
+    "vacuum": "Staubsauger",
+    "camera": "Kamera",
+    "button": "Taste",
+    "select": "Auswahl",
+    "update": "Update",
+    "number": "Nummer",
+    "input_boolean": "Schalter",
+    "input_number": "Zahleneingabe",
+    "input_text": "Texteingabe",
+    "input_select": "Auswahl",
+    "automation": "Automatisierung",
+    "script": "Skript",
+    "scene": "Szene",
+    "person": "Person",
+    "device_tracker": "Geräte-Tracker",
+    "zone": "Zone",
+    "sun": "Sonne",
+    "weather": "Wetter",
+    "calendar": "Kalender",
+    "water_heater": "Warmwasserbereiter",
+    "humidifier": "Luftbefeuchter",
+    "remote": "Fernbedienung",
+    "siren": "Sirene",
+    "alarm_control_panel": "Alarmzentrale"
+  },
+  "entity_types_requiring_manual_basename": [
+    "button",
+    "select", 
+    "update",
+    "number",
+    "input_boolean",
+    "input_number",
+    "input_text",
+    "input_select"
+  ]
 }
