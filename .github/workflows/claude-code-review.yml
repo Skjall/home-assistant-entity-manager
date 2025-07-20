@@ -3,6 +3,10 @@ name: Claude Code Review
 on:
   pull_request:
     types: [opened, synchronize]
+    paths-ignore:
+      - 'translations/**'
+      - '*.md'
+      - 'LICENSE'
     # Optional: Only run on specific file changes
     # paths:
     #   - "src/**/*.ts"

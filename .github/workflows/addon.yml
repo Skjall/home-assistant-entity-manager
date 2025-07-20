@@ -3,6 +3,10 @@ name: Add-on CI
 on:
   pull_request:
     branches: [main, next-release]
+    paths-ignore:
+      - 'translations/**'
+      - '*.md'
+      - 'LICENSE'
 
 jobs:
   lint:

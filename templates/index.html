@@ -97,7 +97,7 @@
                     <div class="flex-1 max-w-xs">
                         <select x-model="selectedArea" @change="onAreaChange()"
                                 class="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                            <option value="">Wähle einen Raum...</option>
+                            <option value="" x-text="t ? t('filters.select_area') : 'Wähle einen Bereich...'">Wähle einen Bereich...</option>
                             <template x-for="area in areas" :key="area.name">
                                 <option :value="area.name">
                                     <span x-text="`${area.display_name} (${area.entity_count})`"></span>
@@ -178,25 +178,25 @@
                             <div class="flex items-center space-x-2">
                                 <span class="text-gray-600">Entities:</span>
                                 <span class="font-semibold" x-text="totalEntities"></span>
-                                <span class="text-xs text-gray-500">(<span x-text="changes.length"></span> Geräte)</span>
+                                <span class="text-xs text-gray-500">(<span x-text="changes.length"></span> <span x-text="t('units.devices')"></span>)</span>
                                 <span class="text-gray-400 ml-2">|</span>
                                 <span class="text-amber-600 font-semibold ml-2" x-text="needRenameCount"></span>
-                                <span class="text-xs text-amber-600">ändern</span>
+                                <span class="text-xs text-amber-600" x-text="t('summary.to_change')"></span>
                                 <span class="text-gray-400 ml-2">|</span>
                                 <span class="text-green-600 font-semibold ml-2" x-text="totalEntities - needRenameCount"></span>
-                                <span class="text-xs text-green-600">korrekt</span>
+                                <span class="text-xs text-green-600" x-text="t('summary.correct')"></span>
                             </div>
 
                             <!-- Selection count -->
                             <div x-show="selectedCount > 0 || selectedDeviceCount > 0" class="flex items-center space-x-2 pl-4 border-l">
                                 <i class="ri-checkbox-circle-fill text-blue-600"></i>
-                                <span class="text-gray-600">Ausgewählt:</span>
+                                <span class="text-gray-600" x-text="t('summary.selected') + ':'"></span>
                                 <span x-show="selectedCount > 0" class="font-semibold text-blue-600">
-                                    <span x-text="selectedCount"></span> Entities
+                                    <span x-text="selectedCount"></span> <span x-text="t('units.entities')"></span>
                                 </span>
                                 <span x-show="selectedCount > 0 && selectedDeviceCount > 0" class="text-gray-400">+</span>
                                 <span x-show="selectedDeviceCount > 0" class="font-semibold text-blue-600">
-                                    <span x-text="selectedDeviceCount"></span> Devices
+                                    <span x-text="selectedDeviceCount"></span> <span x-text="t('units.devices')"></span>
                                 </span>
                             </div>
                         </div>
@@ -204,12 +204,12 @@
                             <button @click="selectAll()"
                                     class="px-3 py-1.5 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors flex items-center">
                                 <i class="ri-checkbox-multiple-line mr-1.5"></i>
-                                Alle auswählen
+                                <span x-text="t('buttons.select_all')"></span>
                             </button>
                             <button @click="selectNone()"
                                     class="px-3 py-1.5 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors flex items-center">
                                 <i class="ri-checkbox-blank-line mr-1.5"></i>
-                                Keine auswählen
+                                <span x-text="t('buttons.select_none')"></span>
                             </button>
                             <button @click="executeChanges()"
                                     :disabled="(selectedCount === 0 && selectedDeviceCount === 0) || executing"
@@ -230,7 +230,7 @@
             <div x-show="loading" x-cloak class="flex justify-center py-12">
                 <div class="flex items-center space-x-2">
                     <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                    <span class="text-gray-600" x-text="t ? t('messages.loading') : 'Lade Entities...'">Lade Entities...</span>
+                    <span class="text-gray-600" x-text="t ? t('messages.loading') : 'Loading...'">Loading...</span>
                 </div>
             </div>
 
@@ -275,7 +275,7 @@
                                                                :href="'/config/devices/device/' + (deviceGroup && deviceGroup.device ? deviceGroup.device.id : '')"
                                                                target="_blank"
                                                                class="text-blue-600 hover:text-blue-700"
-                                                               title="Gerät in Home Assistant öffnen"
+                                                               :title="t('entity.open_device_in_ha')"
                                                                @click.stop>
                                                                 <i class="ri-external-link-line text-sm"></i>
                                                             </a>
@@ -288,7 +288,7 @@
                                                 </div>
                                                 <div class="flex items-center space-x-2">
                                                     <span class="text-sm text-gray-500">
-                                                        <span x-text="deviceGroup && deviceGroup.entities ? deviceGroup.entities.length : 0"></span> Entities
+                                                        <span x-text="deviceGroup && deviceGroup.entities ? deviceGroup.entities.length : 0"></span> <span x-text="t('units.entities')"></span>
                                                     </span>
                                                 </div>
                                             </div>
@@ -300,10 +300,10 @@
                                         <div class="flex-1">
                                             <div class="flex items-center space-x-2">
                                                 <template x-if="deviceGroup && deviceGroup.device && deviceGroup.device.has_override">
-                                                    <span class="text-xs text-gray-500">Basisname:</span>
+                                                    <span class="text-xs text-gray-500" x-text="t('entity.basename')"></span>
                                                 </template>
                                                 <template x-if="deviceGroup && deviceGroup.device && !deviceGroup.device.has_override">
-                                                    <span class="text-xs text-gray-500">Vorschlag:</span>
+                                                    <span class="text-xs text-gray-500" x-text="t('entity.suggestion') + ':'"></span>
                                                 </template>
                                                 <template x-if="deviceGroup && deviceGroup.device && !deviceGroup.device.editing">
                                                     <code class="text-sm font-mono cursor-pointer hover:underline"
@@ -329,19 +329,19 @@
                                                         @click="if (deviceGroup && deviceGroup.device) { deviceGroup.device.override_name = deviceGroup.device.suggested_base_name; saveDeviceEdit(deviceGroup.device); }"
                                                         class="text-xs text-green-600 hover:text-green-700">
                                                     <i class="ri-check-line mr-1"></i>
-                                                    Vorschlag annehmen
+                                                    <span x-text="t('entity.accept_suggestion')"></span>
                                                 </button>
                                             </template>
                                             <span x-show="deviceGroup && deviceGroup.device && deviceGroup.device.editing" class="text-xs text-gray-500 italic">
-                                                Enter zum Speichern, ESC zum Abbrechen
+                                                <span x-text="t('entity.save_cancel_hint', {save: 'Enter', cancel: 'ESC'})"></span>
                                             </span>
                                             <span x-show="deviceGroup && deviceGroup.device && !deviceGroup.device.needs_rename && !deviceGroup.device.editing" class="text-xs text-green-600 flex items-center">
                                                 <i class="ri-checkbox-circle-line mr-1"></i>
-                                                Name bereits korrekt
+                                                <span x-text="t('entity.name_already_correct')"></span>
                                             </span>
                                             <span x-show="deviceGroup && deviceGroup.device && deviceGroup.device.selected" class="text-xs text-blue-600 flex items-center ml-auto">
                                                 <i class="ri-checkbox-circle-fill mr-1"></i>
-                                                Ausgewählt
+                                                <span x-text="t('entity.selected_badge')"></span>
                                             </span>
                                         </div>
                                     </div>
@@ -350,13 +350,13 @@
                                     <div x-show="deviceGroup && deviceGroup.device && deviceGroup.device.needs_rename" class="mt-2 space-y-1">
                                         <div class="flex items-center space-x-2">
                                             <i class="ri-arrow-right-line text-amber-500"></i>
-                                            <span class="text-sm font-semibold text-amber-700">Umbenennung:</span>
+                                            <span class="text-sm font-semibold text-amber-700" x-text="t('entity.renaming') + ':'"></span>
                                             <code class="text-sm font-mono text-amber-700" x-text="deviceGroup && deviceGroup.device ? deviceGroup.device.current_name : ''"></code>
                                             <i class="ri-arrow-right-line text-amber-500"></i>
                                             <code class="text-sm font-mono text-green-700 font-semibold" x-text="getDevicePreviewName(deviceGroup.device)"></code>
                                         </div>
                                         <div class="text-xs text-gray-500 ml-6">
-                                            Alle zugehörigen Entity IDs werden entsprechend angepasst
+                                            <span x-text="t('entity.all_related_entities_note')"></span>
                                         </div>
                                     </div>
                                 </div>
@@ -366,8 +366,8 @@
                                     <div class="flex items-center space-x-3">
                                         <i class="ri-cpu-line text-gray-400"></i>
                                         <div>
-                                            <h3 class="font-semibold text-gray-600">Entities ohne Gerät</h3>
-                                            <p class="text-xs text-gray-500">Diese Entities sind keinem Gerät zugeordnet</p>
+                                            <h3 class="font-semibold text-gray-600" x-text="t('entity.entities_without_device')"></h3>
+                                            <p class="text-xs text-gray-500" x-text="t('entity.entities_without_device_desc')"></p>
                                         </div>
                                     </div>
                                     <span class="text-sm text-gray-500">
@@ -434,11 +434,11 @@
                                                     <div class="flex items-center space-x-2">
                                                         <!-- Basename editing -->
                                                         <div class="flex items-center space-x-2">
-                                                            <span class="text-xs text-gray-500">Basename:</span>
+                                                            <span class="text-xs text-gray-500" x-text="t('entity.basename')"></span>
                                                             <template x-if="entity && !entity.editing">
                                                                 <code class="text-xs font-mono cursor-pointer hover:underline"
                                                                       :class="entity ? (entity.has_override ? 'text-blue-700' : ((getEntitySuggestion(entity) === 'Sensor' || getEntitySuggestion(entity) === 'Enum') ? 'text-red-600' : 'text-amber-700')) : 'text-gray-500'"
-                                                                      x-text="entity ? (entity.has_override ? entity.override_name : ((getEntitySuggestion(entity) === 'Sensor' || getEntitySuggestion(entity) === 'Enum') ? '-- Klicken zum Eingeben --' : getEntitySuggestion(entity))) : ''"
+                                                                      x-text="entity ? (entity.has_override ? entity.override_name : ((getEntitySuggestion(entity) === 'Sensor' || getEntitySuggestion(entity) === 'Enum') ? t('entity.click_to_edit') : getEntitySuggestion(entity))) : ''"
                                                                       @click="startEntityEdit(entity)"></code>
                                                             </template>
                                                             <template x-if="entity && entity.editing">
@@ -457,26 +457,26 @@
                                                         <button x-show="entity && entity.needs_rename && !entity.has_override && getEntitySuggestion(entity) !== 'Sensor' && getEntitySuggestion(entity) !== 'Enum'"
                                                                 @click.stop="acceptEntitySuggestion(entity)"
                                                                 class="text-xs px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 hover:bg-amber-200 transition-colors"
-                                                                title="Vorschlag übernehmen">
-                                                            Vorschlag
+                                                                :title="t('entity.accept_suggestion')">
+                                                            <span x-text="t('entity.suggestion')"></span>
                                                         </button>
                                                         <span x-show="entity && entity.needs_rename && !entity.has_override && (getEntitySuggestion(entity) === 'Sensor' || getEntitySuggestion(entity) === 'Enum')"
                                                               class="text-xs px-1.5 py-0.5 rounded-full bg-red-100 text-red-700"
                                                               title="Manueller Basename erforderlich">
-                                                            Eingabe erforderlich
+                                                            <span x-text="t('entity.input_required')"></span>
                                                         </span>
                                                         <span x-show="entity && entity.needs_rename && entity.has_override"
                                                               class="text-xs px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-700">
-                                                            Override
+                                                            <span x-text="t('entity.override')"></span>
                                                         </span>
                                                         <span x-show="entity && !entity.needs_rename && entity.has_maintained_label"
                                                               class="text-xs px-1.5 py-0.5 bg-gray-100 text-gray-600 rounded-full">
-                                                            <i class="ri-check-line"></i> Maintained
+                                                            <i class="ri-check-line"></i> <span x-text="t('entity.maintained')"></span>
                                                         </span>
                                                         <span x-show="entity && entity.disabled_by"
                                                               class="text-xs px-1.5 py-0.5 bg-purple-100 text-purple-700 rounded-full"
-                                                              :title="'Deaktiviert von: ' + (entity ? entity.disabled_by : '')">
-                                                            <i class="ri-eye-close-line"></i> Deaktiviert
+                                                              :title="t('entity.disabled_by') + ' ' + (entity ? entity.disabled_by : '')">
+                                                            <i class="ri-eye-close-line"></i> <span x-text="t('entity.disabled')"></span>
                                                         </span>
 
                                                         <!-- Dependencies link -->
@@ -501,7 +501,7 @@
             <div x-show="!loading && changes.length === 0 && selectedArea && selectedDomain" x-cloak
                  class="bg-white rounded-lg shadow-sm p-12 text-center">
                 <i class="ri-inbox-line text-4xl text-gray-400 mb-4"></i>
-                <p class="text-gray-600">Keine Entities gefunden für diese Auswahl.</p>
+                <p class="text-gray-600" x-text="t('entity.no_entities_found')"></p>
             </div>
             </div>
         </main>
@@ -512,7 +512,7 @@
              @click.self="showDependencyModal = false">
             <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[80vh] overflow-hidden">
                 <div class="p-6 border-b">
-                    <h3 class="text-lg font-semibold">Dependencies für <code x-text="currentEntityId" class="text-sm bg-gray-100 px-2 py-1 rounded"></code></h3>
+                    <h3 class="text-lg font-semibold"><span x-text="t('dependencies.title')"></span> <code x-text="currentEntityId" class="text-sm bg-gray-100 px-2 py-1 rounded"></code></h3>
                 </div>
                 <div class="p-6 overflow-y-auto max-h-[60vh]">
                     <div x-show="!dependencyData" class="text-center py-8">
@@ -533,14 +533,14 @@
                             </div>
                         </template>
                         <div x-show="!dependencyData || Object.keys(dependencyData).length === 0" class="text-center text-gray-500">
-                            Keine Dependencies gefunden
+                            <span x-text="t('dependencies.no_dependencies')"></span>
                         </div>
                     </div>
                 </div>
                 <div class="p-6 border-t bg-gray-50">
                     <button @click="showDependencyModal = false"
                             class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700">
-                        Schließen
+                        <span x-text="t('buttons.close')"></span>
                     </button>
                 </div>
             </div>
@@ -568,30 +568,30 @@
              @click.self="deviceRenameModal = false">
             <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
                 <div class="p-6 border-b">
-                    <h3 class="text-lg font-semibold">Gerät umbenennen</h3>
+                    <h3 class="text-lg font-semibold" x-text="t('device.rename_device')"></h3>
                 </div>
                 <div class="p-6">
                     <div x-show="selectedDevice">
                         <p class="text-sm text-gray-600 mb-4">
-                            Aktueller Name: <span class="font-medium" x-text="selectedDevice?.name"></span>
+                            <span x-text="t('device.current_name') + ':'" class="mr-1"></span><span class="font-medium" x-text="selectedDevice?.name"></span>
                         </p>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Neuer Name</label>
+                        <label class="block text-sm font-medium text-gray-700 mb-2" x-text="t('device.new_name')"></label>
                         <input type="text" x-model="newDeviceName"
                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                @keyup.enter="saveDeviceRename()">
                         <p class="text-xs text-gray-500 mt-2">
-                            Hinweis: Das Umbenennen des Geräts wird automatisch alle zugehörigen Entities aktualisieren.
+                            <span x-text="t('device.rename_note')"></span>
                         </p>
                     </div>
                 </div>
                 <div class="p-6 border-t bg-gray-50 flex justify-end space-x-2">
                     <button @click="deviceRenameModal = false"
                             class="px-4 py-2 text-gray-600 hover:text-gray-800">
-                        Abbrechen
+                        <span x-text="t('buttons.cancel')"></span>
                     </button>
                     <button @click="saveDeviceRename()"
                             class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-                        Umbenennen
+                        <span x-text="t('buttons.rename')"></span>
                     </button>
                 </div>
             </div>
@@ -705,7 +705,7 @@
                         const statsResponse = await fetch('api/stats');
                         this.stats = await statsResponse.json();
                     } catch (error) {
-                        this.showMessage('Fehler beim Laden der Areas', 'error');
+                        this.showMessage(this.t('messages.error_loading_areas'), 'error');
                     }
                 },
 
@@ -849,14 +849,17 @@
                 },
 
                 getExecuteButtonText() {
-                    if (!this.t) return 'Änderungen ausführen';
+                    if (!this.t) return 'Execute changes';
                     
                     let text = [];
                     if (this.selectedDeviceCount > 0) {
-                        text.push(`${this.selectedDeviceCount} ${this.selectedDeviceCount === 1 ? 'Gerät' : 'Geräte'}`);
+                        const deviceText = this.selectedDeviceCount === 1 
+                            ? this.t('device.count_singular') 
+                            : this.t('device.count_plural');
+                        text.push(`${this.selectedDeviceCount} ${deviceText}`);
                     }
                     if (this.selectedCount > 0) {
-                        text.push(`${this.selectedCount} ${this.selectedCount === 1 ? 'Entity' : 'Entities'}`);
+                        text.push(`${this.selectedCount} ${this.t('units.entities')}`);
                     }
                     
                     if (text.length === 0) {
@@ -1154,13 +1157,13 @@
                                 }
                             }
 
-                            this.showMessage('Device Override gespeichert', 'success');
+                            this.showMessage(this.t('messages.device_override_saved'), 'success');
                         } else {
                             const error = await response.json();
-                            this.showMessage(`Fehler: ${error.error}`, 'error');
+                            this.showMessage(`${this.t('messages.error')}: ${error.error}`, 'error');
                         }
                     } catch (error) {
-                        this.showMessage('Fehler beim Speichern des Device Override', 'error');
+                        this.showMessage(this.t('messages.error_saving_device_override'), 'error');
                     }
                 },
 
@@ -1178,22 +1181,22 @@
                         });
 
                         if (response.ok) {
-                            this.showMessage('Gerät wurde erfolgreich umbenannt', 'success');
+                            this.showMessage(this.t('messages.device_renamed_successfully'), 'success');
                             this.deviceRenameModal = false;
                             // Reload preview to show updated entity names
                             await this.loadPreview();
                         } else {
                             const error = await response.json();
-                            this.showMessage(`Fehler: ${error.error}`, 'error');
+                            this.showMessage(`${this.t('messages.error')}: ${error.error}`, 'error');
                         }
                     } catch (error) {
-                        this.showMessage('Fehler beim Umbenennen des Geräts', 'error');
+                        this.showMessage(this.t('messages.error_renaming_device'), 'error');
                     }
                 },
 
                 async renameDeviceInHA(device) {
                     if (!device.has_override || !device.override_name) {
-                        this.showMessage('Kein Override-Name gesetzt', 'warning');
+                        this.showMessage(this.t('messages.no_override_name_set'), 'warning');
                         return;
                     }
 
@@ -1210,15 +1213,15 @@
 
                         if (response.ok) {
                             const result = await response.json();
-                            this.showMessage(result.message || 'Gerät erfolgreich in Home Assistant umbenannt', 'success');
+                            this.showMessage(result.message || this.t('messages.device_renamed_successfully'), 'success');
                             // Reload preview to show updated names
                             await this.loadPreview();
                         } else {
                             const error = await response.json();
-                            this.showMessage(`Fehler: ${error.error}`, 'error');
+                            this.showMessage(`${this.t('messages.error')}: ${error.error}`, 'error');
                         }
                     } catch (error) {
-                        this.showMessage('Fehler beim Umbenennen des Geräts in Home Assistant', 'error');
+                        this.showMessage(this.t('messages.error_renaming_device_in_ha'), 'error');
                     }
                 },
 
@@ -1322,15 +1325,15 @@
                             entity.editing = false;
 
                             // Zeige Erfolgsmeldung
-                            this.showMessage('Override gespeichert', 'success');
+                            this.showMessage(this.t('messages.override_saved'), 'success');
                         } else {
                             entity.editing = false;
                             const error = await response.json();
-                            this.showMessage(`Fehler: ${error.error}`, 'error');
+                            this.showMessage(`${this.t('messages.error')}: ${error.error}`, 'error');
                         }
                     } catch (error) {
                         entity.editing = false;
-                        this.showMessage('Fehler beim Speichern des Entity Override', 'error');
+                        this.showMessage(this.t('messages.error_saving_entity_override'), 'error');
                     }
                 },
 
@@ -1359,7 +1362,7 @@
                     this.editingAreaName = false;
 
                     if (!this.selectedAreaData || !this.selectedAreaData.area_id) {
-                        this.showMessage('Kein Bereich ausgewählt', 'error');
+                        this.showMessage(this.t('messages.no_area_selected'), 'error');
                         return;
                     }
 
@@ -1378,10 +1381,10 @@
                             window.location.reload();
                         } else {
                             const error = await response.json();
-                            this.showMessage(`Fehler: ${error.error}`, 'error');
+                            this.showMessage(`${this.t('messages.error')}: ${error.error}`, 'error');
                         }
                     } catch (error) {
-                        this.showMessage('Fehler beim Speichern des Area Override', 'error');
+                        this.showMessage(this.t('messages.error_saving_area_override'), 'error');
                     }
                 },
 
@@ -1442,17 +1445,17 @@
                         let messageParts = [];
 
                         if (deviceSuccessCount > 0 || deviceFailedCount > 0) {
-                            let deviceMsg = `Geräte: ${deviceSuccessCount} erfolgreich`;
+                            let deviceMsg = `${this.t('messages.devices_label')}: ${deviceSuccessCount} ${this.t('messages.successful')}`;
                             if (deviceFailedCount > 0) {
-                                deviceMsg += `, ${deviceFailedCount} Fehler`;
+                                deviceMsg += `, ${deviceFailedCount} ${this.t('messages.failed')}`;
                             }
                             messageParts.push(deviceMsg);
                         }
 
                         if (successCount > 0 || failedCount > 0 || skippedCount > 0) {
-                            let entityMsg = `Entities: ${successCount} erfolgreich`;
+                            let entityMsg = `${this.t('messages.entities_label')}: ${successCount} ${this.t('messages.successful')}`;
                             if (skippedCount > 0) {
-                                entityMsg += `, ${skippedCount} übersprungen`;
+                                entityMsg += `, ${skippedCount} ${this.t('messages.skipped')}`;
                             }
                             if (failedCount > 0) {
                                 entityMsg += `, ${failedCount} Fehler`;
@@ -1461,7 +1464,7 @@
                         }
 
                         if (warningCount > 0) {
-                            messageParts.push(`${warningCount} Dependency-Warnungen`);
+                            messageParts.push(`${warningCount} ${this.t('messages.dependency_warnings')}`);
                         }
 
                         const message = messageParts.join(' | ');
@@ -1482,7 +1485,7 @@
                             await this.loadPreview();
                         }, 1500);
                     } catch (error) {
-                        this.showMessage('Fehler beim Ausführen der Änderungen', 'error');
+                        this.showMessage(this.t('messages.error_executing_changes'), 'error');
                     } finally {
                         this.executing = false;
                     }
@@ -1497,7 +1500,7 @@
                         const response = await fetch(`api/dependencies/${encodeURIComponent(entityId)}`);
                         this.dependencyData = await response.json();
                     } catch (error) {
-                        this.dependencyData = { error: 'Fehler beim Laden der Dependencies' };
+                        this.dependencyData = { error: this.t('messages.error_loading_dependencies') };
                     }
                 },
 
@@ -1517,8 +1520,8 @@
                         <div class="flex items-start">
                             <i class="ri-alert-line text-xl mr-3 mt-0.5"></i>
                             <div>
-                                <p class="font-semibold">Dependencies konnten nicht automatisch aktualisiert werden</p>
-                                <p class="text-sm mt-1">Bitte prüfe folgende Entities manuell in Home Assistant:</p>
+                                <p class="font-semibold">${this.t('messages.dependencies_update_warning_title')}</p>
+                                <p class="text-sm mt-1">${this.t('messages.dependencies_update_warning_desc')}</p>
                                 <ul class="text-sm mt-2 space-y-1">
                                     ${warnings.map(w => `<li class="flex items-center"><i class="ri-arrow-right-s-line mr-1"></i><code class="bg-amber-50 px-1 rounded">${w.entity_id}</code></li>`).join('')}
                                 </ul>
