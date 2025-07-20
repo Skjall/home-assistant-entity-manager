@@ -7,6 +7,7 @@
     <link href="static/css/styles.css?v={{ version }}" rel="stylesheet">
     <link href="static/css/remixicon.css?v={{ version }}" rel="stylesheet">
     <script src="static/js/translations.js?v={{ version }}"></script>
+    <script src="static/js/config.js?v={{ version }}"></script>
     <script src="static/js/alpine.min.js" defer></script>
     <script src="static/js/app.js" defer></script>
     <script>
@@ -1097,10 +1098,9 @@
                     const idParts = entity.new_id.split('.');
                     const domain = idParts[0];
                     
-                    // Get the list of domains requiring manual basename from translations
-                    const requiresManual = this.t('entity_types_requiring_manual_basename');
-                    if (Array.isArray(requiresManual)) {
-                        return requiresManual.includes(domain);
+                    // Get the list of domains requiring manual basename from config
+                    if (window.EntityManagerConfig && window.EntityManagerConfig.entityTypesRequiringManualBasename) {
+                        return window.EntityManagerConfig.entityTypesRequiringManualBasename.includes(domain);
                     }
                     
                     // Fallback to empty suggestion check

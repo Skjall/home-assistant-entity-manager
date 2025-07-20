@@ -147,15 +147,5 @@
     "remote": "Fernbedienung",
     "siren": "Sirene",
     "alarm_control_panel": "Alarmzentrale"
-  },
-  "entity_types_requiring_manual_basename": [
-    "button",
-    "select", 
-    "update",
-    "number",
-    "input_boolean",
-    "input_number",
-    "input_text",
-    "input_select"
-  ]
+  }
 }

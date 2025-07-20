@@ -155,15 +155,5 @@
     "remote": "Remote",
     "siren": "Siren",
     "alarm_control_panel": "Alarm Panel"
-  },
-  "entity_types_requiring_manual_basename": [
-    "button",
-    "select", 
-    "update",
-    "number",
-    "input_boolean",
-    "input_number",
-    "input_text",
-    "input_select"
-  ]
+  }
 }
